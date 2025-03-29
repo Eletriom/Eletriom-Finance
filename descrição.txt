@@ -1,0 +1,59 @@
+Principais Módulos e Funcionalidades
+Entrada e Importação de Dados
+O sistema deverá oferecer recursos para:
+Inserção manual de operações por meio de formulários, onde o usuário informa data, valor, descrição e, se necessário, se a transação é crédito ou débito.
+Importação de extratos em formatos padronizados (CSV, Excel, JSON etc.), de forma que a estrutura das colunas (Data, Valor, Descrição, etc.) seja corretamente interpretada.
+Validação dos dados inseridos, com verificação de erros de digitação, datas incoerentes ou valores não numéricos.
+Processamento e Cálculo do Saldo
+A parte central do sistema é o mecanismo de cálculo. Este módulo deverá:
+Registrar a ordem cronológica dos eventos para que o saldo do dia seja obtido a partir do saldo inicial acrescido ou subtraído das transações ocorridas.
+Diferenciar entradas de saídas (créditos e débitos) e aplicar as operações de soma e subtração de forma automática.
+Permitir ajustes manuais ou a "reconciliar" operações quando houver operações de compensação (como “acerto” ou “reembolso”).
+Gerar o “Saldo do dia”, que é atualizado dinamicamente sempre que uma nova transação é inserida ou alterada.
+Persistência e Modelagem de Dados
+O sistema deverá ter um banco de dados relacional (ou, conforme a necessidade, um NoSQL) bem estruturado. A modelagem pode incluir tabelas como:
+Tabela de transações, com campos: ID, data, valor, tipo (entrada ou saída), descrição, categoria (opcional) e, se necessário, referência à conta associada.
+Tabela de contas ou origens (por exemplo, “INTER”, “MONIS”, “XP”, etc.), permitindo distinguir as operações de diferentes carteiras ou instituições.
+Tabela de parâmetros/configurações, onde se define o saldo inicial, regras de arredondamento e demais políticas financeiras.
+Interface de Usuário e Apresentação
+A camada de apresentação deve ser intuitiva e informativa, com características como:
+Um dashboard que mostre o extrato diário com colunas para data, transação, saldo acumulado, e que permita filtrar por período ou categoria.
+Formulários para inclusão e edição de transações, com máscaras para inserção de valor e validação de data.
+Relatórios e gráficos interativos que permitam visualizar a evolução do saldo, distribuição de despesas e receitas por categoria e alertas para operações incomuns.
+Um layout responsivo, para acesso tanto por desktop quanto por dispositivos móveis.
+Relatórios, Auditoria e Segurança
+Para garantir a confiabilidade e integridade do histórico financeiro, o sistema deverá possuir:
+Módulo de relatórios que possibilite exportação dos dados (por exemplo, em CSV ou PDF) e apresentação de dashboards customizáveis.
+Registro de log e auditoria, para rastrear quem, quando e como foram inseridas ou modificadas as transações.
+Rotinas de backup, controle de acesso e autenticação – com níveis de permissões que possam distinguir administradores, contadores ou usuários finais.
+Integrações e Automatizações
+Em ambientes que exigem maior nível de automação, o sistema pode incluir:
+Conexões diretas com APIs de bancos ou fintechs, para importar automaticamente extratos e operações.
+Mecanismos de conciliação que, com base em regras pré-definidas, consigam identificar e compensar automaticamente débitos e créditos relacionados.
+Rotinas programadas (jobs) para atualização dos saldos e envio de notificações em caso de discrepâncias ou limites atingidos.
+Escalabilidade e Arquitetura
+Dependendo do volume de transações e dos usuários, o sistema pode ser desenvolvido inicialmente como um aplicativo monolítico – facilitando o desenvolvimento e implantação – com possibilidade de migrar para uma arquitetura de microserviços quando for necessário escalonamento. Aspectos a considerar:
+Camada de Backend (ex.: utilizando Python, Node.js ou Java) com serviços RESTful ou GraphQL.
+Frontend com frameworks modernos (React, Angular ou Vue.js) para construir uma interface interativa e responsiva.
+Banco de dados SQL (MySQL, PostgreSQL) ou mesmo uma solução híbrida, caso haja necessidade de alta performance nas consultas de histórico.
+Exemplo de Fluxo de Dados
+O usuário acessa o sistema e visualiza o dashboard com o saldo atual.
+Ao inserir uma nova transação (por exemplo, “10-ago., R$ 114,21, INTER”), o sistema valida os dados, registra a operação na base e recalcula o saldo acumulado daquele dia e dos dias subsequentes.
+Quando há uma operação de saída (como “5-set., Saída: R$ 37,90, METLIFE”), o sistema identifica a transação como débito e atualiza o saldo do dia, mostrando o valor subtraído juntamente com a descrição associada.
+O usuário pode filtrar as transações por datas, categorias ou buscar por descrições específicas (por exemplo, “MONIS” ou “Ajuste”), e gerar relatórios customizados ou exportar os dados para análise externa.
+Requisitos Técnicos e Funcionais
+Requisitos Funcionais:
+Cadastro, consulta, edição e exclusão de transações;
+Cálculo automático do saldo acumulado;
+Importação e exportação de dados;
+Geração de relatórios e gráficos;
+Sistema de autenticação e controle de acesso;
+Log de auditoria e histórico de alterações.
+Requisitos Não Funcionais:
+Interface amigável, responsiva e intuitiva;
+Performance adequada para processamento de grandes volumes de dados;
+Segurança dos dados com criptografia (principalmente dados sensíveis financeiros);
+Escalabilidade e alta disponibilidade caso o sistema passe a ser utilizado por múltiplos usuários simultaneamente;
+Facilidade de integração com outros sistemas (APIs bancárias, ERP, etc.).
+Considerações Finais
+Ao construir esse sistema, é fundamental aplicar boas práticas de engenharia de software, como a separação de responsabilidades (por exemplo, utilizando uma arquitetura em camadas), testes automatizados (unitários e de integração) e um gerenciamento de versionamento de código. A modularidade possibilitará futura expansão (como a inclusão de módulos de previsão de fluxo de caixa ou análise de desempenho financeiro) sem a necessidade de reescrever todo o sistema.

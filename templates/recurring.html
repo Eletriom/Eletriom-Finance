@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="fas fa-sync-alt mr-2"></i>Transações Recorrentes</h5>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Descrição</th>
+          <th>Valor</th>
+          <th>Tipo</th>
+          <th>Categoria</th>
+          <th>Cartão</th>
+          <th>Recorrência</th>
+          <th>Próxima Data</th>
+          <th>Ocorrências</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for group in recurring_groups %}
+        <tr>
+          <td>{{ group.description }}</td>
+          <td class="font-weight-bold {% if group.trans_type == 'entrada' %}text-success{% else %}text-danger{% endif %}">
+            R$ {{ group.value | round(2) }}
+          </td>
+          <td>
+            {% if group.trans_type == 'entrada' %}
+            <span class="badge badge-success"><i class="fas fa-arrow-up mr-1"></i>Entrada</span>
+            {% else %}
+            <span class="badge badge-danger"><i class="fas fa-arrow-down mr-1"></i>Saída</span>
+            {% endif %}
+          </td>
+          <td>{% if group.category %}<span class="badge badge-info">{{ group.category }}</span>{% endif %}</td>
+          <td>{% if group.credit_card_name %}<span class="badge badge-warning"><i class="fas fa-credit-card mr-1"></i>{{ group.credit_card_name }}</span>{% endif %}</td>
+          <td>
+            <span class="badge badge-primary">
+              {% if group.recurrence_type == 'diario' %}
+                <i class="fas fa-calendar-day mr-1"></i>Diária
+              {% elif group.recurrence_type == 'semanal' %}
+                <i class="fas fa-calendar-week mr-1"></i>Semanal
+              {% elif group.recurrence_type == 'mensal' %}
+                <i class="fas fa-calendar-alt mr-1"></i>Mensal
+              {% elif group.recurrence_type == 'anual' %}
+                <i class="fas fa-calendar mr-1"></i>Anual
+              {% endif %}
+            </span>
+          </td>
+          <td>{{ group.next_date }}</td>
+          <td><span class="badge badge-secondary">{{ group.count }} de {{ group.total }}</span></td>
+          <td>
+            <button class="btn btn-sm btn-info btn-view-series" data-id="{{ group.id }}"><i class="fas fa-eye"></i></button>
+            <button class="btn btn-sm btn-danger btn-cancel-series" data-id="{{ group.id }}"><i class="fas fa-ban"></i></button>
+          </td>
+        </tr>
+        {% endfor %}
+        {% if not recurring_groups %}
+        <tr>
+          <td colspan="8" class="text-center py-4">
+            <i class="fas fa-info-circle mr-2 text-info"></i>Não há transações recorrentes cadastradas.
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal de Visualização da Série -->
+<div class="modal fade" id="viewSeriesModal" tabindex="-1" role="dialog" aria-labelledby="viewSeriesModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="viewSeriesModalLabel"><i class="fas fa-list-alt mr-2"></i>Detalhes da Série Recorrente</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="series-details">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <h6><i class="fas fa-file-alt mr-1"></i>Descrição:</h6>
+              <p id="series-description" class="font-weight-bold"></p>
+            </div>
+            <div class="col-md-6">
+              <h6><i class="fas fa-tag mr-1"></i>Categoria:</h6>
+              <p id="series-category"></p>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <h6><i class="fas fa-dollar-sign mr-1"></i>Valor:</h6>
+              <p id="series-value" class="font-weight-bold"></p>
+            </div>
+            <div class="col-md-6">
+              <h6><i class="fas fa-sync-alt mr-1"></i>Recorrência:</h6>
+              <p id="series-recurrence"></p>
+            </div>
+          </div>
+        </div>
+        <h6 class="mt-4 mb-3"><i class="fas fa-calendar-check mr-1"></i>Ocorrências:</h6>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="series-occurrences">
+              <!-- Preenchido via JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Confirmação de Cancelamento -->
+<div class="modal fade" id="cancelSeriesModal" tabindex="-1" role="dialog" aria-labelledby="cancelSeriesModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-sm" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="cancelSeriesModalLabel"><i class="fas fa-exclamation-triangle text-danger mr-2"></i>Cancelar Série</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Tem certeza que deseja cancelar esta série de transações recorrentes?</p>
+        <div class="form-group">
+          <div class="custom-control custom-radio">
+            <input type="radio" id="cancel-future" name="cancel-option" class="custom-control-input" value="future" checked>
+            <label class="custom-control-label" for="cancel-future">Cancelar apenas ocorrências futuras</label>
+          </div>
+          <div class="custom-control custom-radio mt-2">
+            <input type="radio" id="cancel-all" name="cancel-option" class="custom-control-input" value="all">
+            <label class="custom-control-label" for="cancel-all">Cancelar todas as ocorrências</label>
+          </div>
+        </div>
+        <p class="text-danger"><small>Esta ação não pode ser desfeita.</small></p>
+        <input type="hidden" id="cancel-series-id">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="btn-confirm-cancel">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Visualizar série
+    document.querySelectorAll('.btn-view-series').forEach(button => {
+      button.addEventListener('click', function() {
+        const seriesId = this.getAttribute('data-id');
+        loadSeriesDetails(seriesId);
+      });
+    });
+    
+    // Cancelar série
+    document.querySelectorAll('.btn-cancel-series').forEach(button => {
+      button.addEventListener('click', function() {
+        const seriesId = this.getAttribute('data-id');
+        document.getElementById('cancel-series-id').value = seriesId;
+        $('#cancelSeriesModal').modal('show');
+      });
+    });
+    
+    // Confirmar cancelamento
+    document.getElementById('btn-confirm-cancel').addEventListener('click', function() {
+      const seriesId = document.getElementById('cancel-series-id').value;
+      const cancelOption = document.querySelector('input[name="cancel-option"]:checked').value;
+      cancelRecurringSeries(seriesId, cancelOption);
+    });
+    
+    // Função para carregar detalhes da série
+    function loadSeriesDetails(seriesId) {
+      fetch(`/recurring/${seriesId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Preencher detalhes da série
+            document.getElementById('series-description').textContent = data.series.description;
+            document.getElementById('series-category').textContent = data.series.category || 'Sem categoria';
+            
+            const valueElement = document.getElementById('series-value');
+            valueElement.textContent = `R$ ${data.series.value.toFixed(2)}`;
+            valueElement.className = `font-weight-bold ${data.series.trans_type === 'entrada' ? 'text-success' : 'text-danger'}`;
+            
+            let recurrenceText = '';
+            switch(data.series.recurrence_type) {
+              case 'diario': recurrenceText = 'Diária'; break;
+              case 'semanal': recurrenceText = 'Semanal'; break;
+              case 'mensal': recurrenceText = 'Mensal'; break;
+              case 'anual': recurrenceText = 'Anual'; break;
+            }
+            document.getElementById('series-recurrence').textContent = recurrenceText;
+            
+            // Preencher ocorrências
+            const occurrencesTable = document.getElementById('series-occurrences');
+            occurrencesTable.innerHTML = '';
+            
+            data.occurrences.forEach(occurrence => {
+              const row = document.createElement('tr');
+              
+              // Adicionar classe se for futura
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const occurrenceDate = new Date(occurrence.date);
+              const isFuture = occurrenceDate > today;
+              
+              if (isFuture) {
+                row.classList.add('table-info');
+              }
+              
+              row.innerHTML = `
+                <td>${occurrence.date}</td>
+                <td>
+                  ${isFuture ? 
+                    '<span class="badge badge-info"><i class="fas fa-clock mr-1"></i>Pendente</span>' : 
+                    '<span class="badge badge-success"><i class="fas fa-check mr-1"></i>Realizada</span>'}
+                </td>
+                <td>
+                  ${isFuture ? 
+                    `<button class="btn btn-sm btn-danger btn-cancel-occurrence" data-id="${occurrence.id}"><i class="fas fa-times"></i></button>` : 
+                    ''}
+                </td>
+              `;
+              
+              occurrencesTable.appendChild(row);
+            });
+            
+            // Adicionar eventos para os botões de cancelar ocorrência
+            document.querySelectorAll('.btn-cancel-occurrence').forEach(button => {
+              button.addEventListener('click', function() {
+                const occurrenceId = this.getAttribute('data-id');
+                cancelSingleOccurrence(occurrenceId);
+              });
+            });
+            
+            // Exibir o modal
+            $('#viewSeriesModal').modal('show');
+          } else {
+            alert(data.message || 'Erro ao carregar detalhes da série.');
+          }
+        })
+        .catch(error => {
+          console.error('Erro ao carregar detalhes da série:', error);
+          alert('Erro ao carregar detalhes da série. Por favor, tente novamente.');
+        });
+    }
+    
+    // Função para cancelar uma série recorrente
+    function cancelRecurringSeries(seriesId, option) {
+      fetch(`/recurring/cancel/${seriesId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ option: option })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Fechar o modal
+          $('#cancelSeriesModal').modal('hide');
+          
+          // Recarregar a página para atualizar os dados
+          window.location.reload();
+        } else {
+          alert(data.message || 'Erro ao cancelar a série.');
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao cancelar a série:', error);
+        alert('Erro ao cancelar a série. Por favor, tente novamente.');
+      });
+    }
+    
+    // Função para cancelar uma única ocorrência
+    function cancelSingleOccurrence(occurrenceId) {
+      if (confirm('Tem certeza que deseja cancelar esta ocorrência?')) {
+        fetch(`/recurring/cancel-occurrence/${occurrenceId}`, {
+          method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Recarregar os detalhes da série
+            loadSeriesDetails(data.seriesId);
+          } else {
+            alert(data.message || 'Erro ao cancelar a ocorrência.');
+          }
+        })
+        .catch(error => {
+          console.error('Erro ao cancelar a ocorrência:', error);
+          alert('Erro ao cancelar a ocorrência. Por favor, tente novamente.');
+        });
+      }
+    }
+  });
+</script>
+{% endblock %}

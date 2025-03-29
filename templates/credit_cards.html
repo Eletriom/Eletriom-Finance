@@ -1,0 +1,392 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="fas fa-credit-card mr-2"></i>Meus Cartões de Crédito</h5>
+    <button class="btn btn-primary" data-toggle="modal" data-target="#addCardModal">
+      <i class="fas fa-plus-circle mr-1"></i>Novo Cartão
+    </button>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Limite</th>
+          <th>Limite Disponível</th>
+          <th>Vencimento</th>
+          <th>Fechamento</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for card in credit_cards %}
+        <tr>
+          <td>{{ card.name }}</td>
+          <td class="font-weight-bold">R$ {{ card.limit | round(2) }}</td>
+          <td class="font-weight-bold {% if card.available_limit < (card.limit * 0.2) %}text-danger{% elif card.available_limit < (card.limit * 0.5) %}text-warning{% else %}text-success{% endif %}">
+            R$ {{ card.available_limit | round(2) }}
+          </td>
+          <td>Dia {{ card.due_day }}</td>
+          <td>Dia {{ card.closing_day }}</td>
+          <td>
+            <button class="btn btn-sm btn-info btn-view-card" data-id="{{ card.id }}" data-toggle="modal" data-target="#viewCardModal">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button class="btn btn-sm btn-primary btn-edit-card" data-id="{{ card.id }}" data-toggle="modal" data-target="#editCardModal">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-danger btn-delete-card" data-id="{{ card.id }}" data-toggle="modal" data-target="#deleteCardModal">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+        {% if not credit_cards %}
+        <tr>
+          <td colspan="6" class="text-center py-4">
+            <i class="fas fa-info-circle mr-2 text-info"></i>Você ainda não possui cartões de crédito cadastrados.
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal para adicionar cartão -->
+<div class="modal fade" id="addCardModal" tabindex="-1" role="dialog" aria-labelledby="addCardModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addCardModalLabel"><i class="fas fa-plus-circle mr-2"></i>Novo Cartão de Crédito</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="add-card-form" method="POST" action="{{ url_for('add_credit_card') }}">
+          <div class="form-group">
+            <label for="card-name"><i class="fas fa-tag mr-1"></i>Nome do Cartão</label>
+            <input type="text" class="form-control" id="card-name" name="name" placeholder="Ex: Nubank" required>
+          </div>
+          <div class="form-group">
+            <label for="card-limit"><i class="fas fa-dollar-sign mr-1"></i>Limite Total</label>
+            <input type="text" class="form-control" id="card-limit" name="limit" placeholder="Ex: 5000.00" required>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="card-due-day"><i class="fas fa-calendar-day mr-1"></i>Dia de Vencimento</label>
+                <input type="number" class="form-control" id="card-due-day" name="due_day" min="1" max="31" placeholder="Ex: 15" required>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="card-closing-day"><i class="fas fa-calendar-check mr-1"></i>Dia de Fechamento</label>
+                <input type="number" class="form-control" id="card-closing-day" name="closing_day" min="1" max="31" placeholder="Ex: 10" required>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+        <button type="submit" form="add-card-form" class="btn btn-primary">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para editar cartão -->
+<div class="modal fade" id="editCardModal" tabindex="-1" role="dialog" aria-labelledby="editCardModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editCardModalLabel"><i class="fas fa-edit mr-2"></i>Editar Cartão de Crédito</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="edit-card-form" method="POST">
+          <input type="hidden" id="edit-card-id" name="card_id">
+          <div class="form-group">
+            <label for="edit-card-name"><i class="fas fa-tag mr-1"></i>Nome do Cartão</label>
+            <input type="text" class="form-control" id="edit-card-name" name="name" required>
+          </div>
+          <div class="form-group">
+            <label for="edit-card-limit"><i class="fas fa-dollar-sign mr-1"></i>Limite Total</label>
+            <input type="text" class="form-control" id="edit-card-limit" name="limit" required>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="edit-card-due-day"><i class="fas fa-calendar-day mr-1"></i>Dia de Vencimento</label>
+                <input type="number" class="form-control" id="edit-card-due-day" name="due_day" min="1" max="31" required>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="edit-card-closing-day"><i class="fas fa-calendar-check mr-1"></i>Dia de Fechamento</label>
+                <input type="number" class="form-control" id="edit-card-closing-day" name="closing_day" min="1" max="31" required>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+        <button type="button" id="btn-save-edit-card" class="btn btn-primary">Salvar Alterações</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para visualizar detalhes do cartão -->
+<div class="modal fade" id="viewCardModal" tabindex="-1" role="dialog" aria-labelledby="viewCardModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="viewCardModalLabel"><i class="fas fa-credit-card mr-2"></i>Detalhes do Cartão</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-info-circle mr-2"></i>Informações do Cartão</h5>
+                <p><strong>Nome:</strong> <span id="view-card-name"></span></p>
+                <p><strong>Limite Total:</strong> R$ <span id="view-card-limit"></span></p>
+                <p><strong>Limite Disponível:</strong> R$ <span id="view-card-available"></span></p>
+                <p><strong>Vencimento:</strong> Dia <span id="view-card-due-day"></span></p>
+                <p><strong>Fechamento:</strong> Dia <span id="view-card-closing-day"></span></p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-chart-pie mr-2"></i>Resumo da Fatura Atual</h5>
+                <div class="progress mb-3" style="height: 25px;">
+                  <div id="view-card-usage-bar" class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                </div>
+                <p><strong>Total da Fatura:</strong> R$ <span id="view-card-invoice-total"></span></p>
+                <p><strong>Vencimento:</strong> <span id="view-card-invoice-due-date"></span></p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <h5 class="mb-3"><i class="fas fa-list-alt mr-2"></i>Transações da Fatura Atual</h5>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Descrição</th>
+                <th>Valor</th>
+                <th>Categoria</th>
+              </tr>
+            </thead>
+            <tbody id="view-card-transactions">
+              <!-- Preenchido via JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de confirmação de exclusão -->
+<div class="modal fade" id="deleteCardModal" tabindex="-1" role="dialog" aria-labelledby="deleteCardModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-sm" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteCardModalLabel"><i class="fas fa-exclamation-triangle text-danger mr-2"></i>Excluir Cartão</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Tem certeza que deseja excluir este cartão de crédito?</p>
+        <p class="text-danger"><small>Esta ação não pode ser desfeita e todas as transações associadas a este cartão serão desvinculadas.</small></p>
+        <input type="hidden" id="delete-card-id">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="btn-confirm-delete-card">Excluir</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Carregar detalhes do cartão para edição
+    document.querySelectorAll('.btn-edit-card').forEach(button => {
+      button.addEventListener('click', function() {
+        const cardId = this.getAttribute('data-id');
+        loadCardDetails(cardId, 'edit');
+      });
+    });
+    
+    // Carregar detalhes do cartão para visualização
+    document.querySelectorAll('.btn-view-card').forEach(button => {
+      button.addEventListener('click', function() {
+        const cardId = this.getAttribute('data-id');
+        loadCardDetails(cardId, 'view');
+      });
+    });
+    
+    // Configurar exclusão de cartão
+    document.querySelectorAll('.btn-delete-card').forEach(button => {
+      button.addEventListener('click', function() {
+        const cardId = this.getAttribute('data-id');
+        document.getElementById('delete-card-id').value = cardId;
+      });
+    });
+    
+    // Confirmar exclusão de cartão
+    document.getElementById('btn-confirm-delete-card').addEventListener('click', function() {
+      const cardId = document.getElementById('delete-card-id').value;
+      deleteCard(cardId);
+    });
+    
+    // Salvar edição de cartão
+    document.getElementById('btn-save-edit-card').addEventListener('click', function() {
+      const form = document.getElementById('edit-card-form');
+      const cardId = document.getElementById('edit-card-id').value;
+      updateCard(cardId, new FormData(form));
+    });
+    
+    // Função para carregar detalhes do cartão
+    function loadCardDetails(cardId, mode) {
+      fetch(`/credit_cards/${cardId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            if (mode === 'edit') {
+              // Preencher formulário de edição
+              document.getElementById('edit-card-id').value = data.card.id;
+              document.getElementById('edit-card-name').value = data.card.name;
+              document.getElementById('edit-card-limit').value = data.card.limit;
+              document.getElementById('edit-card-due-day').value = data.card.due_day;
+              document.getElementById('edit-card-closing-day').value = data.card.closing_day;
+            } else if (mode === 'view') {
+              // Preencher detalhes para visualização
+              document.getElementById('view-card-name').textContent = data.card.name;
+              document.getElementById('view-card-limit').textContent = data.card.limit.toFixed(2);
+              document.getElementById('view-card-available').textContent = data.card.available_limit.toFixed(2);
+              document.getElementById('view-card-due-day').textContent = data.card.due_day;
+              document.getElementById('view-card-closing-day').textContent = data.card.closing_day;
+              
+              // Calcular e exibir porcentagem de uso
+              const usagePercent = ((data.card.limit - data.card.available_limit) / data.card.limit * 100).toFixed(1);
+              const usageBar = document.getElementById('view-card-usage-bar');
+              usageBar.style.width = `${usagePercent}%`;
+              usageBar.textContent = `${usagePercent}%`;
+              
+              // Definir cor da barra de progresso com base no uso
+              if (usagePercent > 80) {
+                usageBar.className = 'progress-bar bg-danger';
+              } else if (usagePercent > 50) {
+                usageBar.className = 'progress-bar bg-warning';
+              } else {
+                usageBar.className = 'progress-bar bg-success';
+              }
+              
+              // Exibir total da fatura e data de vencimento
+              document.getElementById('view-card-invoice-total').textContent = 
+                (data.card.limit - data.card.available_limit).toFixed(2);
+              document.getElementById('view-card-invoice-due-date').textContent = 
+                data.card.next_due_date;
+              
+              // Preencher tabela de transações
+              const transactionsTable = document.getElementById('view-card-transactions');
+              transactionsTable.innerHTML = '';
+              
+              if (data.transactions && data.transactions.length > 0) {
+                data.transactions.forEach(txn => {
+                  const row = document.createElement('tr');
+                  row.innerHTML = `
+                    <td>${txn.date}</td>
+                    <td>${txn.description}</td>
+                    <td class="text-danger">R$ ${txn.value.toFixed(2)}</td>
+                    <td>${txn.category ? `<span class="badge badge-info">${txn.category}</span>` : ''}</td>
+                  `;
+                  transactionsTable.appendChild(row);
+                });
+              } else {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                  <td colspan="4" class="text-center py-3">
+                    <i class="fas fa-info-circle mr-2 text-info"></i>Não há transações na fatura atual.
+                  </td>
+                `;
+                transactionsTable.appendChild(row);
+              }
+            }
+          } else {
+            alert('Erro ao carregar detalhes do cartão: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Erro:', error);
+          alert('Erro ao carregar detalhes do cartão.');
+        });
+    }
+    
+    // Função para atualizar cartão
+    function updateCard(cardId, formData) {
+      fetch(`/credit_cards/${cardId}`, {
+        method: 'POST',
+        body: formData
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert('Cartão atualizado com sucesso!');
+            window.location.reload();
+          } else {
+            alert('Erro ao atualizar cartão: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Erro:', error);
+          alert('Erro ao atualizar cartão.');
+        });
+    }
+    
+    // Função para excluir cartão
+    function deleteCard(cardId) {
+      fetch(`/credit_cards/delete/${cardId}`, {
+        method: 'POST'
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert('Cartão excluído com sucesso!');
+            window.location.reload();
+          } else {
+            alert('Erro ao excluir cartão: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Erro:', error);
+          alert('Erro ao excluir cartão.');
+        });
+    }
+  });
+</script>
+{% endblock %}

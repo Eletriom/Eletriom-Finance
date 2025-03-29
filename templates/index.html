@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row">
+  <div class="col-md-6 col-lg-4 mb-4">
+    <div class="dashboard-card balance-card">
+      <h4><i class="fas fa-wallet mr-2"></i>Saldo Atual</h4>
+      <h2 class="mb-0">R$ {{ current_balance | round(2) }}</h2>
+      <p class="text-muted small mb-0"><i class="fas fa-info-circle mr-1"></i>Considera apenas transações até hoje</p>
+    </div>
+  </div>
+  <div class="col-md-6 col-lg-4 mb-4">
+    <div class="dashboard-card">
+      <h4><i class="fas fa-arrow-up text-success mr-2"></i>Total Entradas</h4>
+      <h2 class="mb-0 text-success">R$ {{ current_month_income | round(2) }}</h2>
+      <p class="text-muted small mb-0"><i class="fas fa-calendar-alt mr-1"></i>Mês atual</p>
+    </div>
+  </div>
+  <div class="col-md-6 col-lg-4 mb-4">
+    <div class="dashboard-card">
+      <h4><i class="fas fa-arrow-down text-danger mr-2"></i>Total Saídas</h4>
+      <h2 class="mb-0 text-danger">R$ {{ current_month_expenses | round(2) }}</h2>
+      <p class="text-muted small mb-0"><i class="fas fa-calendar-alt mr-1"></i>Mês atual</p>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <div class="col-md-12 mb-4">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-chart-pie mr-2"></i>Distribuição de Gastos por Categoria</h5>
+        <select id="seletor-mes" class="form-control" style="width: auto;">
+          <option value="todos">Todos os meses</option>
+          <option value="jan">Janeiro</option>
+          <option value="fev">Fevereiro</option>
+          <option value="mar">Março</option>
+          <option value="abr">Abril</option>
+          <option value="mai">Maio</option>
+          <option value="jun">Junho</option>
+          <option value="jul">Julho</option>
+          <option value="ago">Agosto</option>
+          <option value="set">Setembro</option>
+          <option value="out">Outubro</option>
+          <option value="nov">Novembro</option>
+          <option value="dez">Dezembro</option>
+        </select>
+      </div>
+      <div class="card-body">
+        <div style="height: 300px;">
+          <canvas id="grafico-gastos"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0"><i class="fas fa-list mr-2"></i>Histórico de Transações</h5>
+    <button id="btn-future-balance" class="btn btn-sm btn-info"><i class="fas fa-calendar-alt mr-1"></i>Projeção Futura</button>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Tipo</th>
+          <th>Valor</th>
+          <th>Descrição</th>
+          <th>Categoria</th>
+          <th>Saldo</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for txn in transactions %}
+        <tr data-id="{{ loop.index0 }}" data-transaction-id="{{ txn.id }}">
+          <td>{{ txn.date }}</td>
+          <td>
+            {% if txn.trans_type == 'entrada' %}
+            <span class="badge badge-success"><i class="fas fa-arrow-up mr-1"></i>Entrada</span>
+            {% else %}
+            <span class="badge badge-danger"><i class="fas fa-arrow-down mr-1"></i>Saída</span>
+            {% endif %}
+          </td>
+          <td class="font-weight-bold {% if txn.trans_type == 'entrada' %}text-success{% else %}text-danger{% endif %}">
+            R$ {{ txn.value | round(2) }}
+          </td>
+          <td>{{ txn.description }}</td>
+          <td>{% if txn.category %}<span class="badge badge-info">{{ txn.category }}</span>{% endif %}</td>
+          <td class="font-weight-bold">R$ {{ txn.balance | round(2) }}</td>
+          <td>
+            <button class="btn btn-sm btn-primary btn-edit" data-id="{{ loop.index0 }}"><i class="fas fa-edit"></i></button>
+            <button class="btn btn-sm btn-danger btn-delete" data-id="{{ loop.index0 }}"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal de Projeção de Saldo Futuro -->
+<div class="modal fade" id="futureBalanceModal" tabindex="-1" role="dialog" aria-labelledby="futureBalanceModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="futureBalanceModalLabel"><i class="fas fa-calendar-alt mr-2"></i>Projeção de Saldo Futuro (Mensal)</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="text-center mb-3">
+          <h4>Saldo Atual: <span id="current-balance" class="font-weight-bold">R$ 0,00</span></h4>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Saldo Projetado</th>
+                <th>Transações</th>
+              </tr>
+            </thead>
+            <tbody id="projection-table-body">
+              <!-- Dados de projeção serão inseridos aqui via JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Edição de Transação -->
+<div class="modal fade" id="editTransactionModal" tabindex="-1" role="dialog" aria-labelledby="editTransactionModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editTransactionModalLabel"><i class="fas fa-edit mr-2"></i>Editar Transação</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="edit-transaction-form">
+          <input type="hidden" id="edit-transaction-id">
+          <input type="hidden" id="edit-credit-card-id-hidden" name="credit_card_id">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="edit-date"><i class="fas fa-calendar-alt mr-1"></i>Data</label>
+                <input type="text" class="form-control" name="date" id="edit-date" placeholder="Ex: 10-08-2025 ou 10/08/2025" required>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="edit-value"><i class="fas fa-dollar-sign mr-1"></i>Valor</label>
+                <input type="text" class="form-control" name="value" id="edit-value" placeholder="Ex: 114.21" required>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="edit-trans_type"><i class="fas fa-exchange-alt mr-1"></i>Tipo</label>
+                <select class="form-control" name="trans_type" id="edit-trans_type" required>
+                  <option value="entrada">Entrada</option>
+                  <option value="saida">Saída</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="edit-category"><i class="fas fa-tag mr-1"></i>Categoria (Opcional)</label>
+                <input type="text" class="form-control" name="category" id="edit-category" placeholder="Ex: Finanças Pessoais">
+              </div>
+            </div>
+          </div>
+          <div id="edit-credit-card-option" class="form-group" style="display: none;">
+            <label for="edit-credit_card_id"><i class="fas fa-credit-card mr-1"></i>Cartão de Crédito (Opcional)</label>
+            <select class="form-control" name="credit_card_id" id="edit-credit_card_id">
+              <option value="">Selecione um cartão (opcional)</option>
+              {% for card in credit_cards %}
+              <option value="{{ card.id }}">{{ card.name }} (Venc: dia {{ card.due_day }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="edit-description"><i class="fas fa-align-left mr-1"></i>Descrição</label>
+            <input type="text" class="form-control" name="description" id="edit-description" placeholder="Ex: INTER" required>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-save-edit">Salvar Alterações</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" role="dialog" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-sm" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteConfirmModalLabel"><i class="fas fa-exclamation-triangle text-danger mr-2"></i>Confirmar Exclusão</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Tem certeza que deseja excluir esta transação?</p>
+        <p class="text-danger"><small>Esta ação não pode ser desfeita.</small></p>
+        <input type="hidden" id="delete-transaction-id">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="btn-confirm-delete">Excluir</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Elemento para armazenar dados das transações em formato JSON -->
+<script id="transactions-data" type="application/json">
+  {{ transactions | tojson }}
+</script>
+
+<script>
+  document.querySelectorAll('.btn-edit').forEach(button => {
+    button.addEventListener('click', function() {
+      const transactionId = document.querySelector(`tr[data-id="${this.getAttribute('data-id')}"]`).getAttribute('data-transaction-id');
+      
+      // Carregar dados da transação
+      fetch(`/edit/${transactionId}`)
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('edit-transaction-id').value = data.id;
+          document.getElementById('edit-date').value = data.date;
+          document.getElementById('edit-value').value = data.value;
+          document.getElementById('edit-description').value = data.description;
+          document.getElementById('edit-trans_type').value = data.trans_type;
+          document.getElementById('edit-category').value = data.category;
+          document.getElementById('edit-credit-card-id-hidden').value = data.credit_card_id;
+          
+          // Mostrar/ocultar opção de cartão de crédito com base no tipo
+          const creditCardOption = document.getElementById('edit-credit-card-option');
+          creditCardOption.style.display = data.trans_type === 'saida' ? 'block' : 'none';
+          
+          // Selecionar o cartão correto no dropdown
+          if (data.credit_card_id) {
+            const creditCardSelect = document.getElementById('edit-credit_card_id');
+            if (creditCardSelect) {
+              creditCardSelect.value = data.credit_card_id;
+            }
+          }
+          
+          $('#editTransactionModal').modal('show');
+        });
+    });
+  });
+  
+  // Mostrar/ocultar opção de cartão de crédito quando o tipo for alterado no formulário de edição
+  document.getElementById('edit-trans_type').addEventListener('change', function() {
+    const creditCardOption = document.getElementById('edit-credit-card-option');
+    creditCardOption.style.display = this.value === 'saida' ? 'block' : 'none';
+    
+    // Se mudar para entrada, limpar a seleção de cartão
+    if (this.value !== 'saida') {
+      document.getElementById('edit-credit_card_id').value = '';
+      document.getElementById('edit-credit-card-id-hidden').value = '';
+    }
+  });
+  
+  // Atualizar o campo hidden quando o select de cartão mudar
+  document.getElementById('edit-credit_card_id').addEventListener('change', function() {
+    document.getElementById('edit-credit-card-id-hidden').value = this.value;
+  });
+  
+  // Salvar edição
+  document.getElementById('btn-save-edit').addEventListener('click', function() {
+    const transactionId = document.getElementById('edit-transaction-id').value;
+    const formData = new FormData(document.getElementById('edit-transaction-form'));
+    
+    fetch(`/edit/${transactionId}`, {
+      method: 'POST',
+      body: formData
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          $('#editTransactionModal').modal('hide');
+          window.location.reload();
+        } else {
+          alert(data.message);
+        }
+      });
+  });
+</script>
+{% endblock %}
