@@ -1,12 +1,19 @@
 # Eletriom Finance - Sistema de Gerenciamento Financeiro
 
 ![Eletriom Finance](https://img.shields.io/badge/Eletriom-Finance-blue)
-![Versão](https://img.shields.io/badge/Versão-1.1-green)
+![Versão](https://img.shields.io/badge/Versão-1.2-green)
 ![Licença](https://img.shields.io/badge/Licença-MIT-yellow)
 
 ## 📋 Sobre o Projeto
 
 Eletriom Finance é um sistema completo de gerenciamento financeiro pessoal desenvolvido com Flask. Ele permite o controle detalhado de transações financeiras, cartões de crédito, faturas pendentes e oferece uma visão clara do saldo diário, ajudando você a manter suas finanças organizadas e sob controle.
+
+## 🆕 Novidades da Versão 1.2
+
+- **Filtro de Anos no Gráfico**: Agora é possível visualizar gastos por categoria de qualquer ano com a nova opção "Mostrar transações de todos os anos"
+- **Melhor Visualização de Meses**: Títulos dos gráficos mostram o mês por extenso e o ano claramente
+- **Correção de Bug**: Corrigido problema que mostrava transações futuras no gráfico de distribuição de gastos por categoria
+- **Logs Detalhados**: Adicionados logs para facilitar a depuração e análise de transações
 
 ## ✨ Principais Funcionalidades
 
@@ -16,6 +23,7 @@ Eletriom Finance é um sistema completo de gerenciamento financeiro pessoal dese
 - Gráficos de distribuição de gastos por categoria
 - Análise de tendências financeiras com comparativos mensais
 - Previsão de gastos baseada no histórico
+- **NOVO**: Filtro por ano nas visualizações de gastos
 
 ### 💰 Gerenciamento de Transações
 - Registro rápido de entradas e saídas
@@ -105,6 +113,12 @@ Eletriom Finance é um sistema completo de gerenciamento financeiro pessoal dese
 - Configure transações recorrentes
 - Acompanhe seus cartões de crédito
 - Monitore faturas pendentes
+
+### Visualizando Gráficos de Gastos
+- Selecione o mês desejado no seletor de mês
+- Por padrão, os gráficos mostram apenas as transações do ano atual
+- Para ver transações de outros anos, marque a opção "Mostrar transações de todos os anos"
+- O título do gráfico indica claramente qual período está sendo visualizado
 
 ### Dicas de Uso
 - Mantenha suas transações em dia
