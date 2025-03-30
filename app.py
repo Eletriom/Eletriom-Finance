@@ -118,7 +118,7 @@ def parse_date(date_str):
 # Função para carregar o usuário pelo ID (necessário para o Flask-Login)
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 # Função para enviar email
 def send_email(to, subject, template):
@@ -1345,8 +1345,8 @@ def daily_balance():
     # Converter para lista e filtrar apenas dias com transações
     daily_balance_list = [balance for balance in daily_balances.values() if balance['income'] > 0 or balance['expense'] > 0]
     
-    # Ordenar por data (mais recente primeiro)
-    daily_balance_list.sort(key=lambda x: datetime.strptime(x['date'], "%d-%b-%Y"), reverse=True)
+    # Ordenar por data (mais antiga primeiro)
+    daily_balance_list.sort(key=lambda x: datetime.strptime(x['date'], "%d-%b-%Y"))
     
     return render_template('daily_balance.html', 
                            daily_balance_data=daily_balance_list,
