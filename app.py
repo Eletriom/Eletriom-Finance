@@ -1681,6 +1681,11 @@ def privacy_policy():
 def terms_of_use():
     return render_template('terms_of_use.html')
 
+# Rota para a página Sobre Nós
+@app.route('/about')
+def about_us():
+    return render_template('about_us.html')
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()  # Cria as tabelas se não existirem.

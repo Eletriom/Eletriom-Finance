@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sobre Nós - Eletriom Finance</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  <style>
+    .about-hero {
+      background: linear-gradient(135deg, #3498db, #1abc9c);
+      color: #fff;
+      padding: 100px 0 80px;
+      margin-bottom: 0;
+    }
+    .team-member {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .team-member img {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    .timeline {
+      position: relative;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .timeline::after {
+      content: '';
+      position: absolute;
+      width: 6px;
+      background-color: #3498db;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      margin-left: -3px;
+    }
+    .timeline-container {
+      padding: 10px 40px;
+      position: relative;
+      background-color: inherit;
+      width: 50%;
+    }
+    .timeline-container::after {
+      content: '';
+      position: absolute;
+      width: 25px;
+      height: 25px;
+      right: -12px;
+      background-color: white;
+      border: 4px solid #3498db;
+      top: 15px;
+      border-radius: 50%;
+      z-index: 1;
+    }
+    .left {
+      left: 0;
+    }
+    .right {
+      left: 50%;
+    }
+    .left::before {
+      content: " ";
+      height: 0;
+      position: absolute;
+      top: 22px;
+      width: 0;
+      z-index: 1;
+      right: 30px;
+      border: medium solid #f8f9fa;
+      border-width: 10px 0 10px 10px;
+      border-color: transparent transparent transparent #f8f9fa;
+    }
+    .right::before {
+      content: " ";
+      height: 0;
+      position: absolute;
+      top: 22px;
+      width: 0;
+      z-index: 1;
+      left: 30px;
+      border: medium solid #f8f9fa;
+      border-width: 10px 10px 10px 0;
+      border-color: transparent #f8f9fa transparent transparent;
+    }
+    .right::after {
+      left: -13px;
+    }
+    .timeline-content {
+      padding: 20px 30px;
+      background-color: #f8f9fa;
+      position: relative;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    }
+    .value-card {
+      padding: 30px;
+      border-radius: 10px;
+      background-color: #f8f9fa;
+      text-align: center;
+      height: 100%;
+      transition: all 0.3s ease;
+    }
+    .value-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    .value-icon {
+      font-size: 3rem;
+      margin-bottom: 20px;
+      color: #3498db;
+    }
+    @media screen and (max-width: 600px) {
+      .timeline::after {
+        left: 31px;
+      }
+      .timeline-container {
+        width: 100%;
+        padding-left: 70px;
+        padding-right: 25px;
+      }
+      .timeline-container::before {
+        left: 60px;
+        border: medium solid #f8f9fa;
+        border-width: 10px 10px 10px 0;
+        border-color: transparent #f8f9fa transparent transparent;
+      }
+      .left::after, .right::after {
+        left: 18px;
+      }
+      .right {
+        left: 0%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+      <a class="navbar-brand" href="{{ url_for('home') }}"><i class="fas fa-bolt mr-2"></i>Eletriom Finance</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('home') }}">Início</a></li>
+          <li class="nav-item active"><a class="nav-link" href="#">Sobre Nós</a></li>
+          <li class="nav-item"><a class="nav-link" href="#features">Recursos</a></li>
+          <li class="nav-item"><a class="nav-link" href="#pricing">Planos</a></li>
+          <li class="nav-item"><a class="btn btn-login ml-3" href="{{ url_for('login') }}">Entrar</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="about-hero">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-lg-8 mx-auto text-center">
+          <h1 class="display-4 font-weight-bold mb-3">Nossa Missão é Transformar sua Relação com o Dinheiro</h1>
+          <p class="lead mb-4">Conheça a história por trás do Eletriom Finance e como estamos ajudando milhares de pessoas a conquistar independência financeira.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- About Us Content -->
+  <section class="py-5">
+    <div class="container py-5">
+      <div class="row">
+        <div class="col-lg-6">
+          <h2 class="font-weight-bold mb-4">Nossa História</h2>
+          <p class="lead">O Eletriom Finance nasceu da necessidade de simplificar o gerenciamento financeiro pessoal.</p>
+          <p>Fundado em 2020 por um grupo de entusiastas de tecnologia e finanças, nosso objetivo era criar uma solução intuitiva que tornasse o controle financeiro acessível a todos, independentemente de seu conhecimento prévio sobre finanças.</p>
+          <p>Após meses de desenvolvimento e testes com usuários reais, lançamos a primeira versão do Eletriom Finance, que rapidamente ganhou popularidade por sua interface amigável e recursos poderosos.</p>
+          <p>Hoje, atendemos milhares de usuários em todo o Brasil e continuamos evoluindo nossa plataforma com base no feedback de nossa comunidade.</p>
+        </div>
+        <div class="col-lg-6">
+          <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=750&q=80" alt="Nossa equipe trabalhando" class="img-fluid rounded shadow">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Our Values -->
+  <section class="py-5 bg-light">
+    <div class="container py-5">
+      <div class="text-center mb-5">
+        <h2 class="font-weight-bold">Nossos Valores</h2>
+        <p class="lead text-muted">Princípios que norteiam nosso trabalho diariamente</p>
+      </div>
+      <div class="row">
+        <div class="col-lg-4 mb-4">
+          <div class="value-card">
+            <i class="fas fa-lock value-icon"></i>
+            <h4>Segurança</h4>
+            <p>Proteger seus dados é nossa prioridade. Utilizamos as mais avançadas tecnologias de criptografia e seguimos rigorosos protocolos de segurança.</p>
+          </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+          <div class="value-card">
+            <i class="fas fa-lightbulb value-icon"></i>
+            <h4>Inovação</h4>
+            <p>Buscamos constantemente novas formas de melhorar nossa plataforma, incorporando as melhores práticas e tecnologias emergentes.</p>
+          </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+          <div class="value-card">
+            <i class="fas fa-users value-icon"></i>
+            <h4>Comunidade</h4>
+            <p>Valorizamos o feedback de nossos usuários e construímos produtos que atendam às necessidades reais das pessoas.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Our Team -->
+  <section class="py-5">
+    <div class="container py-5">
+      <div class="text-center mb-5">
+        <h2 class="font-weight-bold">Nossa Equipe</h2>
+        <p class="lead text-muted">Conheça os profissionais por trás do Eletriom Finance</p>
+      </div>
+      <div class="row">
+        <div class="col-lg-3 col-md-6">
+          <div class="team-member">
+            <img src="https://filmes.eletriom.com.br/static/images/nerd.jpg" alt="Membro da equipe">
+            <h4>Eletriom</h4>
+            <p class="text-muted">CEO & Fundador</p>
+            <p>Especialista em finanças com mais de 15 anos de experiência no mercado financeiro.</p>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+          <div class="team-member">
+            <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Membro da equipe">
+            <h4>Amanda Santos</h4>
+            <p class="text-muted">CTO</p>
+            <p>Engenheira de software com vasta experiência em desenvolvimento de plataformas seguras e escaláveis.</p>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+          <div class="team-member">
+            <img src="https://randomuser.me/api/portraits/men/67.jpg" alt="Membro da equipe">
+            <h4>Daniel Costa</h4>
+            <p class="text-muted">Designer de UX</p>
+            <p>Especialista em criar interfaces intuitivas e agradáveis que simplificam a gestão financeira.</p>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+          <div class="team-member">
+            <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Membro da equipe">
+            <h4>Mariana Rocha</h4>
+            <p class="text-muted">Especialista em Finanças</p>
+            <p>Consultora financeira que ajuda a desenvolver recursos que realmente fazem diferença no planejamento financeiro.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Our Journey -->
+  <section class="py-5 bg-light">
+    <div class="container py-5">
+      <div class="text-center mb-5">
+        <h2 class="font-weight-bold">Nossa Jornada</h2>
+        <p class="lead text-muted">Os principais marcos na história do Eletriom Finance</p>
+      </div>
+      <div class="timeline">
+        <div class="timeline-container left">
+          <div class="timeline-content">
+            <h4>2020</h4>
+            <p>Fundação do Eletriom Finance. Lançamento da versão beta com recursos básicos de controle financeiro.</p>
+          </div>
+        </div>
+        <div class="timeline-container right">
+          <div class="timeline-content">
+            <h4>2021</h4>
+            <p>Lançamento oficial da plataforma. Atingimos nossos primeiros 1.000 usuários e implementamos o gerenciamento de cartões de crédito.</p>
+          </div>
+        </div>
+        <div class="timeline-container left">
+          <div class="timeline-content">
+            <h4>2022</h4>
+            <p>Expansão dos recursos com adição de transações recorrentes e projeção de saldo futuro. Ultrapassamos 10.000 usuários ativos.</p>
+          </div>
+        </div>
+        <div class="timeline-container right">
+          <div class="timeline-content">
+            <h4>2023</h4>
+            <p>Implementação do plano familiar e aprimoramento da importação de dados. Alcançamos 50.000 usuários em todo o Brasil.</p>
+          </div>
+        </div>
+        <div class="timeline-container left">
+          <div class="timeline-content">
+            <h4>2024</h4>
+            <p>Renovação da interface e adição de ferramentas de análise preditiva. Lançamento do aplicativo mobile.</p>
+          </div>
+        </div>
+        <div class="timeline-container right">
+          <div class="timeline-content">
+            <h4>2025</h4>
+            <p>Expansão internacional e implementação de recursos de inteligência artificial para análise de gastos e recomendações personalizadas.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact Section -->
+  <section class="py-5">
+    <div class="container py-5">
+      <div class="row">
+        <div class="col-lg-6 mb-4 mb-lg-0">
+          <h2 class="font-weight-bold mb-4">Entre em Contato</h2>
+          <p>Estamos sempre disponíveis para ouvir suas dúvidas, sugestões ou feedbacks. Sua opinião é muito importante para continuarmos evoluindo nossa plataforma.</p>
+          <div class="d-flex align-items-center mb-3">
+            <i class="fas fa-envelope text-primary mr-3" style="font-size: 1.5rem;"></i>
+            <div>
+              <h5 class="mb-0">Email</h5>
+              <p class="mb-0">contato@eletriom.com.br</p>
+            </div>
+          </div>
+          <div class="d-flex align-items-center mb-3">
+            <i class="fas fa-phone-alt text-primary mr-3" style="font-size: 1.5rem;"></i>
+            <div>
+              <h5 class="mb-0">Telefone</h5>
+              <p class="mb-0">(21) 0000-0000</p>
+            </div>
+          </div>
+          <!-- <div class="d-flex align-items-center">
+            <i class="fas fa-map-marker-alt text-primary mr-3" style="font-size: 1.5rem;"></i>
+            <div>
+              <h5 class="mb-0">Endereço</h5>
+              <p class="mb-0">Av. Paulista, 1000 - Bela Vista, São Paulo - SP, 01310-100</p>
+            </div>
+          </div> -->
+        </div>
+        <div class="col-lg-6">
+          <form>
+            <div class="form-group">
+              <label for="name">Nome</label>
+              <input type="text" class="form-control" id="name" placeholder="Seu nome completo">
+            </div>
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input type="email" class="form-control" id="email" placeholder="Seu email">
+            </div>
+            <div class="form-group">
+              <label for="subject">Assunto</label>
+              <select class="form-control" id="subject">
+                <option>Selecione um assunto</option>
+                <option>Suporte</option>
+                <option>Dúvidas</option>
+                <option>Parcerias</option>
+                <option>Sugestões</option>
+                <option>Outros</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="message">Mensagem</label>
+              <textarea class="form-control" id="message" rows="5" placeholder="Sua mensagem"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Enviar Mensagem</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="landing-footer">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-4 mb-4 mb-lg-0">
+          <h4><i class="fas fa-bolt mr-2"></i>Eletriom Finance</h4>
+          <p>Sua plataforma completa para gerenciamento financeiro pessoal e familiar.</p>
+        </div>
+        <div class="col-lg-2 mb-4 mb-lg-0">
+          <h5>Empresa</h5>
+          <ul class="list-unstyled">
+            <li class="mb-2"><a href="{{ url_for('about_us') }}">Sobre nós</a></li>
+            <li class="mb-2"><a href="{{ url_for('privacy_policy') }}">Privacidade</a></li>
+            <li class="mb-2"><a href="{{ url_for('terms_of_use') }}">Termos de Uso</a></li>
+            <li class="mb-2"><a href="{{ url_for('about_us') }}#contact">Contato</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-2 mb-4 mb-lg-0">
+          <h5>Recursos</h5>
+          <ul class="list-unstyled">
+            <li class="mb-2"><a href="#">Blog</a></li>
+            <li class="mb-2"><a href="#">Guias</a></li>
+            <li class="mb-2"><a href="#">Tutoriais</a></li>
+            <li class="mb-2"><a href="#">FAQ</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-4">
+          <h5>Inscreva-se na nossa newsletter</h5>
+          <p>Receba dicas de finanças e novidades do Eletriom Finance</p>
+          <form>
+            <div class="input-group mb-3">
+              <input type="email" class="form-control" placeholder="Seu email" aria-label="Email">
+              <div class="input-group-append">
+                <button class="btn btn-primary" type="button">Inscrever</button>
+              </div>
+            </div>
+          </form>
+          <div class="footer-links mt-3">
+            <a href="#"><i class="fab fa-facebook-f"></i></a>
+            <a href="#"><i class="fab fa-twitter"></i></a>
+            <a href="#"><i class="fab fa-instagram"></i></a>
+            <a href="#"><i class="fab fa-linkedin-in"></i></a>
+          </div>
+        </div>
+      </div>
+      <hr class="my-4 bg-light">
+      <div class="text-center">
+        <p class="mb-0">&copy; 2025 Eletriom Finance. Todos os direitos reservados.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html> 
