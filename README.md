@@ -154,8 +154,8 @@ Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICE
 
 Para sugestões, dúvidas ou suporte:
 - Email: contato@eletriom.com.br
-- Twitter: [@EletriomFinance](https://twitter.com/iameletriom)
-- LinkedIn: [Eletriom Finance](https://www.linkedin.com/in/rodrigo-martins-4640821b0/)
+- Twitter: [@Eletriom](https://twitter.com/iameletriom)
+- LinkedIn: [Eletriom](https://www.linkedin.com/in/rodrigo-martins-4640821b0/)
 
 ---
 
