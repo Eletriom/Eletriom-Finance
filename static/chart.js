@@ -1,7 +1,8 @@
 // Função para obter dados de gastos por categoria
-function getDadosGastosPorCategoria(transactions, mes) {
+function getDadosGastosPorCategoria(transactions, mes, mostrarTodosAnos = false) {
     // Depurar transações recebidas
     console.log("Todas as transações:", transactions);
+    console.log("Mostrar todos os anos:", mostrarTodosAnos);
     
     // Obter mapeamento de meses em diferentes formatos
     const monthMap = {
@@ -22,6 +23,20 @@ function getDadosGastosPorCategoria(transactions, mes) {
     // Mapa para controlar transações recorrentes já processadas
     const processedRecurringIds = new Set();
     
+    // Obter data atual
+    const dataAtual = new Date();
+    const mesAtual = dataAtual.getMonth() + 1; // Janeiro é 0
+    const anoAtual = dataAtual.getFullYear();
+    
+    console.log(`Data atual: ${dataAtual.toLocaleDateString()}, Mês atual: ${mesAtual}, Ano atual: ${anoAtual}`);
+    
+    // Converter mês selecionado para número
+    const mesMap = {
+        'jan': 1, 'fev': 2, 'mar': 3, 'abr': 4, 'mai': 5, 'jun': 6,
+        'jul': 7, 'ago': 8, 'set': 9, 'out': 10, 'nov': 11, 'dez': 12
+    };
+    const mesSelecionadoNum = mesMap[mes.toLowerCase()] || 0;
+    
     // Filtrar transações por mês e tipo 'saida'
     const transacoesFiltradas = transactions.filter(txn => {
         if (!txn || !txn.date || !txn.trans_type) return false;
@@ -33,8 +48,26 @@ function getDadosGastosPorCategoria(transactions, mes) {
         const dataParts = txn.date.split('-');
         if (dataParts.length < 3) return false;
         
+        // Extrair ano e mês da transação
+        const anoTxn = parseInt(dataParts[2].split('-')[0]);
+        const mesTxn = dataParts[1].toLowerCase();
+        let mesNumerico = -1;
+        
+        if (mesMap[monthMap[mesTxn]]) {
+            mesNumerico = mesMap[monthMap[mesTxn]];
+        }
+        
+        console.log(`Analisando transação: ${txn.description}, data: ${txn.date}, ano: ${anoTxn}, mês numérico: ${mesNumerico}`);
+        
         // Se for "todos os meses", incluir todas as saídas (mas evitando duplicatas de recorrências)
+        // e ignorar transações futuras
         if (mes === 'todos') {
+            // Ignorar transações futuras quando o seletor é "todos"
+            if (anoTxn > anoAtual || (anoTxn === anoAtual && mesNumerico > mesAtual)) {
+                console.log(`Ignorando transação futura: ${txn.description}, data: ${txn.date}`);
+                return false;
+            }
+            
             // Para transações recorrentes, evitar contar várias vezes
             if (txn.is_recurring && txn.parent_id) {
                 if (processedRecurringIds.has(txn.parent_id)) {
@@ -45,11 +78,7 @@ function getDadosGastosPorCategoria(transactions, mes) {
             return true;
         }
         
-        // Detalhes da análise da data
-        console.log(`Analisando transação: ${txn.description}, data: ${txn.date}`);
-        
         // Normalizar o mês da transação para comparação
-        const mesTxn = dataParts[1].toLowerCase();
         let mesComparar = monthMap[mesTxn] || mesTxn;
         
         // Verificar se o mês da transação é igual ao mês selecionado
@@ -57,7 +86,18 @@ function getDadosGastosPorCategoria(transactions, mes) {
         
         console.log(`Mês da transação: ${mesTxn}, Mês normalizado: ${mesComparar}, Mês selecionado: ${mes}, Match: ${isMatchingMonth}`);
         
+        // IMPORTANTE: Aqui verificamos se o ano também corresponde (apenas ano atual)
+        // Apenas considerar a transação se for do ano atual, a menos que mostrarTodosAnos seja true
+        const isCurrentYear = (anoTxn === anoAtual);
+        const isValidYear = mostrarTodosAnos || isCurrentYear;
+        
         if (isMatchingMonth) {
+            // Verificar se é uma transação do ano atual ou se estamos mostrando todos os anos
+            if (!isValidYear) {
+                console.log(`Ignorando transação de outro ano: ${txn.description}, data: ${txn.date}, ano: ${anoTxn}`);
+                return false;
+            }
+            
             // Para transações recorrentes, verificar se já processamos outra do mesmo grupo
             if (txn.is_recurring && txn.parent_id) {
                 if (processedRecurringIds.has(txn.parent_id)) {
@@ -68,11 +108,12 @@ function getDadosGastosPorCategoria(transactions, mes) {
             }
         }
         
-        return isMatchingMonth;
+        return isMatchingMonth && isValidYear;
     });
     
     // Depurar transações filtradas
-    console.log(`Transações filtradas para o mês ${mes}:`, transacoesFiltradas);
+    const anoMsg = mostrarTodosAnos ? "todos os anos" : `ano ${anoAtual}`;
+    console.log(`Transações filtradas para o mês ${mes} de ${anoMsg}:`, transacoesFiltradas);
     
     // Agrupar por categoria
     const gastosPorCategoria = {};
@@ -92,7 +133,7 @@ function getDadosGastosPorCategoria(transactions, mes) {
     });
     
     // Depurar categorias e valores
-    console.log(`Gastos por categoria para o mês ${mes}:`, gastosPorCategoria);
+    console.log(`Gastos por categoria para o mês ${mes} de ${anoMsg}:`, gastosPorCategoria);
     
     // Converter para arrays para Chart.js
     const categorias = Object.keys(gastosPorCategoria);
@@ -107,6 +148,8 @@ function getDadosGastosPorCategoria(transactions, mes) {
 // Função para criar/atualizar o gráfico
 function atualizarGrafico(transactions) {
     let mesSelecionado = document.getElementById('seletor-mes').value;
+    let mostrarTodosAnos = document.getElementById('mostrar-todos-anos') ? 
+                            document.getElementById('mostrar-todos-anos').checked : false;
     
     // Se nenhum mês foi selecionado, usar o mês atual
     if (!mesSelecionado) {
@@ -115,9 +158,21 @@ function atualizarGrafico(transactions) {
         mesSelecionado = meses[hoje.getMonth()];
     }
     
-    console.log("Mês selecionado:", mesSelecionado);
+    console.log("Mês selecionado:", mesSelecionado, "Mostrar todos os anos:", mostrarTodosAnos);
     
-    const dados = getDadosGastosPorCategoria(transactions, mesSelecionado);
+    // Obter o nome completo do mês para exibição
+    const mesNomes = {
+        'jan': 'Janeiro', 'fev': 'Fevereiro', 'mar': 'Março', 'abr': 'Abril',
+        'mai': 'Maio', 'jun': 'Junho', 'jul': 'Julho', 'ago': 'Agosto',
+        'set': 'Setembro', 'out': 'Outubro', 'nov': 'Novembro', 'dez': 'Dezembro',
+        'todos': 'Todos os Meses'
+    };
+    const mesNome = mesNomes[mesSelecionado] || mesSelecionado;
+    
+    // Obter o ano atual
+    const anoAtual = new Date().getFullYear();
+    
+    const dados = getDadosGastosPorCategoria(transactions, mesSelecionado, mostrarTodosAnos);
     
     // Verificar se há dados
     if (dados.categorias.length === 0) {
@@ -128,6 +183,10 @@ function atualizarGrafico(transactions) {
         
         // Criar gráfico vazio ou mostrar mensagem
         const ctx = document.getElementById('grafico-gastos').getContext('2d');
+        
+        // Ajustar mensagem com base na opção de mostrar todos os anos
+        const anoTexto = mostrarTodosAnos ? "Todos os Anos" : anoAtual;
+        
         const config = {
             type: 'pie',
             data: {
@@ -149,7 +208,7 @@ function atualizarGrafico(transactions) {
                 },
                 title: {
                     display: true,
-                    text: `Distribuição de Gastos por Categoria - Sem gastos no mês de ${mesSelecionado}`,
+                    text: `Distribuição de Gastos - ${mesNome} de ${anoTexto} - Sem gastos registrados`,
                     fontSize: 16
                 }
             }
@@ -165,6 +224,9 @@ function atualizarGrafico(transactions) {
         '#FF9F40', '#8AC249', '#EA526F', '#25CCF7', '#FD7272',
         '#58B19F', '#182C61', '#6D214F', '#82589F', '#3B3B98'
     ];
+    
+    // Ajustar mensagem com base na opção de mostrar todos os anos
+    const anoTexto = mostrarTodosAnos ? "Todos os Anos" : anoAtual;
     
     // Configuração do gráfico
     const config = {
@@ -201,7 +263,7 @@ function atualizarGrafico(transactions) {
             },
             title: {
                 display: true,
-                text: 'Distribuição de Gastos por Categoria',
+                text: `Distribuição de Gastos - ${mesNome} de ${anoTexto}`,
                 fontSize: 16
             }
         }
@@ -405,6 +467,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 const mesAtual = getMesAtual();
                 const seletorMes = document.getElementById('seletor-mes');
                 seletorMes.value = mesAtual;
+                
+                // Adicionar o checkbox para mostrar todos os anos
+                const seletorContainer = seletorMes.parentElement;
+                if (seletorContainer) {
+                    // Criar o checkbox para mostrar todos os anos
+                    const checkboxDiv = document.createElement('div');
+                    checkboxDiv.className = 'form-check mt-2';
+                    checkboxDiv.innerHTML = `
+                        <input class="form-check-input" type="checkbox" id="mostrar-todos-anos">
+                        <label class="form-check-label" for="mostrar-todos-anos">
+                            Mostrar transações de todos os anos
+                        </label>
+                    `;
+                    seletorContainer.appendChild(checkboxDiv);
+                    
+                    // Adicionar evento de mudança ao checkbox
+                    document.getElementById('mostrar-todos-anos').addEventListener('change', function() {
+                        atualizarGrafico(transactions);
+                    });
+                }
                 
                 // Inicializar o gráfico com o mês atual
                 atualizarGrafico(transactions);
