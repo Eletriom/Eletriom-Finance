@@ -60,7 +60,7 @@
     <button id="btn-future-balance" class="btn btn-sm btn-info"><i class="fas fa-calendar-alt mr-1"></i>Projeção Futura</button>
   </div>
   <div class="table-responsive">
-    <table class="table table-hover mb-0">
+    <table class="table table-hover mb-0 table-xs-simplified">
       <thead>
         <tr>
           <th>Data</th>
@@ -75,19 +75,19 @@
       <tbody>
         {% for txn in transactions %}
         <tr data-id="{{ loop.index0 }}" data-transaction-id="{{ txn.id }}">
-          <td>{{ txn.date }}</td>
-          <td>
+          <td data-label="Data">{{ txn.date }}</td>
+          <td data-label="Tipo">
             {% if txn.trans_type == 'entrada' %}
             <span class="badge badge-success"><i class="fas fa-arrow-up mr-1"></i>Entrada</span>
             {% else %}
             <span class="badge badge-danger"><i class="fas fa-arrow-down mr-1"></i>Saída</span>
             {% endif %}
           </td>
-          <td class="font-weight-bold {% if txn.trans_type == 'entrada' %}text-success{% else %}text-danger{% endif %}">
+          <td data-label="Valor" class="font-weight-bold {% if txn.trans_type == 'entrada' %}text-success{% else %}text-danger{% endif %}">
             R$ {{ txn.value | safe_round(2) }}
           </td>
-          <td>{{ txn.description }}</td>
-          <td>
+          <td data-label="Descrição">{{ txn.description }}</td>
+          <td data-label="Categoria">
             {% if txn.category_id %}
               {% set cat = namespace(name='') %}
               {% for c in categories %}
@@ -98,8 +98,8 @@
               <span class="badge badge-info">{{ cat.name|default_if_none }}</span>
             {% endif %}
           </td>
-          <td class="font-weight-bold">R$ {{ txn.balance | safe_round(2) }}</td>
-          <td>
+          <td data-label="Saldo" class="font-weight-bold">R$ {{ txn.balance | safe_round(2) }}</td>
+          <td data-label="Ações">
             <button class="btn btn-sm btn-primary btn-edit" data-id="{{ loop.index0 }}"><i class="fas fa-edit"></i></button>
             <button class="btn btn-sm btn-danger btn-delete" data-id="{{ loop.index0 }}"><i class="fas fa-trash"></i></button>
           </td>

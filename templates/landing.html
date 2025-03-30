@@ -124,6 +124,104 @@
       box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
       overflow: hidden;
     }
+    
+    /* Media queries para melhorar a responsividade em dispositivos móveis */
+    @media (max-width: 768px) {
+      .landing-hero {
+        padding: 80px 0 60px;
+      }
+      
+      .pricing-card {
+        margin-bottom: 30px;
+      }
+      
+      .cta-section {
+        padding: 60px 0;
+      }
+      
+      .testimonial {
+        padding: 20px;
+      }
+      
+      .btn-cta {
+        width: 100%;
+        margin-bottom: 15px;
+      }
+    }
+    
+    @media (max-width: 576px) {
+      .landing-hero {
+        padding: 50px 0 40px;
+      }
+      
+      .landing-hero h1 {
+        font-size: 1.8rem;
+      }
+      
+      .feature-icon {
+        font-size: 2.5rem;
+      }
+      
+      .pricing-price {
+        font-size: 2rem;
+      }
+      
+      .testimonial {
+        padding: 15px;
+      }
+      
+      .testimonial img {
+        width: 50px;
+        height: 50px;
+      }
+      
+      .cta-section {
+        padding: 40px 0;
+      }
+      
+      .cta-section h2 {
+        font-size: 1.8rem;
+      }
+      
+      .btn-cta {
+        padding: 12px 30px;
+        font-size: 1rem;
+      }
+      
+      .landing-footer {
+        padding: 30px 0;
+        text-align: center;
+      }
+      
+      .footer-links {
+        margin-top: 20px;
+        display: flex;
+        justify-content: center;
+      }
+    }
+    
+    @media (max-width: 375px) {
+      .landing-hero h1 {
+        font-size: 1.6rem;
+      }
+      
+      .feature-box {
+        padding: 20px 15px;
+      }
+      
+      .pricing-header {
+        padding: 15px;
+      }
+      
+      .pricing-body {
+        padding: 15px;
+      }
+      
+      .btn-login {
+        padding: 8px 20px;
+        font-size: 0.9rem;
+      }
+    }
   </style>
 </head>
 <body>

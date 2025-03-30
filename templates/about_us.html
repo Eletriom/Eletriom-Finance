@@ -139,6 +139,54 @@
         left: 0%;
       }
     }
+    
+    /* Media queries adicionais para melhorar a visualização em dispositivos móveis */
+    @media screen and (max-width: 576px) {
+      .about-hero {
+        padding: 60px 0 40px;
+      }
+      
+      .about-hero h1 {
+        font-size: 1.8rem;
+      }
+      
+      .team-member img {
+        width: 140px;
+        height: 140px;
+      }
+      
+      .timeline-container {
+        padding: 10px 20px;
+      }
+      
+      .timeline-content {
+        padding: 15px;
+      }
+      
+      .value-card {
+        padding: 20px;
+      }
+      
+      .footer-links a {
+        margin-right: 10px;
+        font-size: 1.2rem;
+      }
+    }
+    
+    @media screen and (max-width: 375px) {
+      .team-member img {
+        width: 120px;
+        height: 120px;
+      }
+      
+      .team-member h4 {
+        font-size: 1.1rem;
+      }
+      
+      .value-icon {
+        font-size: 2.5rem;
+      }
+    }
   </style>
 </head>
 <body>

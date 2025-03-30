@@ -8,7 +8,7 @@
     </button>
   </div>
   <div class="table-responsive">
-    <table class="table table-hover mb-0">
+    <table class="table table-hover mb-0 table-xs-simplified">
       <thead>
         <tr>
           <th>Nome</th>
@@ -22,17 +22,17 @@
       <tbody>
         {% for card in credit_cards %}
         <tr>
-          <td>{{ card.name }}</td>
-          <td class="font-weight-bold">R$ {{ card.limit | round(2) }}</td>
-          <td class="font-weight-bold {% if card.available_limit < (card.limit * 0.2) %}text-danger{% elif card.available_limit < (card.limit * 0.5) %}text-warning{% else %}text-success{% endif %}">
+          <td data-label="Nome">{{ card.name }}</td>
+          <td data-label="Limite" class="font-weight-bold">R$ {{ card.limit | round(2) }}</td>
+          <td data-label="Limite Disponível" class="font-weight-bold {% if card.available_limit < (card.limit * 0.2) %}text-danger{% elif card.available_limit < (card.limit * 0.5) %}text-warning{% else %}text-success{% endif %}">
             R$ {{ card.available_limit | round(2) }}
             <div class="progress mt-1" style="height: 10px;">
               <div class="progress-bar {% if card.available_limit < (card.limit * 0.2) %}bg-danger{% elif card.available_limit < (card.limit * 0.5) %}bg-warning{% else %}bg-success{% endif %}" role="progressbar" style="width: {{ ((card.limit - card.available_limit) / card.limit * 100) | round }}%" aria-valuenow="{{ ((card.limit - card.available_limit) / card.limit * 100) | round }}" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
           </td>
-          <td>Dia {{ card.due_day }}</td>
-          <td>Dia {{ card.closing_day }}</td>
-          <td>
+          <td data-label="Vencimento">Dia {{ card.due_day }}</td>
+          <td data-label="Fechamento">Dia {{ card.closing_day }}</td>
+          <td data-label="Ações">
             <button class="btn btn-sm btn-info btn-view-card" data-id="{{ card.id }}" data-toggle="modal" data-target="#viewCardModal">
               <i class="fas fa-eye"></i>
             </button>

@@ -218,6 +218,175 @@ select.form-control {
   .dashboard-card {
     padding: 1rem;
   }
+
+  .cookie-banner .container {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .cookie-banner p {
+    margin-bottom: 1rem;
+  }
+
+  .btn-accept-cookies {
+    width: 100%;
+  }
+
+  .modal-dialog {
+    margin: 0.5rem;
+  }
+}
+
+/* Media query para dispositivos muito pequenos */
+@media (max-width: 576px) {
+  body {
+    font-size: 14px;
+  }
+
+  h1, .h1 {
+    font-size: 1.8rem;
+  }
+
+  h2, .h2 {
+    font-size: 1.5rem;
+  }
+
+  h3, .h3 {
+    font-size: 1.3rem;
+  }
+
+  h4, .h4 {
+    font-size: 1.1rem;
+  }
+
+  .navbar {
+    padding: 10px 0 15px 0;
+  }
+
+  .navbar-brand {
+    font-size: 1.1rem;
+    max-width: 50%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .btn-nova-transacao {
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    width: 100%;
+  }
+
+  .dashboard-card {
+    padding: 0.8rem;
+  }
+
+  .table th, .table td {
+    padding: 0.5rem;
+  }
+
+  .modal-header {
+    padding: 1rem;
+  }
+
+  .modal-body {
+    padding: 1rem;
+  }
+
+  .form-control {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.9rem;
+  }
+
+  /* Melhorar toque em dispositivos móveis */
+  .btn-edit, .btn-delete {
+    padding: 0.5rem;
+    margin: 0.15rem;
+    min-width: 38px;
+    min-height: 38px;
+  }
+
+  /* Ajustar tabelas para melhor visualização em dispositivos móveis */
+  .table-mobile-optimized th:not(:first-child):not(:last-child),
+  .table-mobile-optimized td:not(:first-child):not(:last-child) {
+    display: none;
+  }
+
+  /* Melhorar dropdowns em telas pequenas */
+  .dropdown-menu {
+    width: 100%;
+    border-radius: 8px;
+  }
+
+  .dropdown-item {
+    padding: 0.75rem 1rem;
+  }
+
+  /* Ajustar gráficos */
+  canvas {
+    max-height: 250px !important;
+  }
+}
+
+/* Ajustes específicos para dispositivos muito pequenos */
+@media (max-width: 375px) {
+  .container {
+    padding: 0.7rem;
+  }
+
+  .navbar .dropdown-toggle::after {
+    display: none;
+  }
+
+  .btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .card-header {
+    padding: 0.75rem;
+  }
+
+  .card-body {
+    padding: 0.75rem;
+  }
+
+  /* Simplificar tabelas */
+  .table-xs-simplified {
+    display: block;
+  }
+  
+  .table-xs-simplified thead {
+    display: none;
+  }
+  
+  .table-xs-simplified tbody, 
+  .table-xs-simplified tr, 
+  .table-xs-simplified td {
+    display: block;
+    width: 100%;
+  }
+  
+  .table-xs-simplified tr {
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #dee2e6;
+  }
+  
+  .table-xs-simplified td {
+    text-align: right;
+    padding-left: 50%;
+    position: relative;
+  }
+  
+  .table-xs-simplified td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 0;
+    width: 45%;
+    padding-left: 0.75rem;
+    text-align: left;
+    font-weight: bold;
+  }
 }
 
 /* Animações */
