@@ -847,7 +847,7 @@ def recurring_transactions():
         # Obter informações do cartão de crédito, se houver
         credit_card_name = None
         if parent.credit_card_id:
-            card = CreditCard.query.get(parent.credit_card_id)
+            card = db.session.get(CreditCard, parent.credit_card_id)
             if card:
                 credit_card_name = card.name
         
