@@ -1198,6 +1198,96 @@ def update_credit_card(card_id):
 @app.route('/credit_cards/delete/<int:card_id>', methods=['POST'])
 def delete_credit_card(card_id):
     card = CreditCard.query.get_or_404(card_id)
+
+# Rota para obter transações de um cartão por mês
+@app.route('/credit_cards/<int:card_id>/transactions')
+def get_card_transactions(card_id):
+    card = CreditCard.query.get_or_404(card_id)
+    month = request.args.get('month', 'current')
+    
+    # Obter data atual
+    today = datetime.now().date()
+    current_month = today.month
+    current_year = today.year
+    
+    # Definir período de busca com base no mês selecionado
+    if month == 'current':
+        # Lógica para fatura atual (do fechamento anterior até o próximo fechamento)
+        if today.day >= card.closing_day:
+            # Estamos após o fechamento deste mês, então a fatura vai do fechamento deste mês até o próximo
+            if current_month == 12:
+                next_closing_month = 1
+                next_closing_year = current_year + 1
+            else:
+                next_closing_month = current_month + 1
+                next_closing_year = current_year
+                
+            start_date = datetime(current_year, current_month, card.closing_day).date()
+            end_date = datetime(next_closing_year, next_closing_month, card.closing_day).date()
+        else:
+            # Estamos antes do fechamento deste mês, então a fatura vai do fechamento do mês anterior até este mês
+            if current_month == 1:
+                prev_closing_month = 12
+                prev_closing_year = current_year - 1
+            else:
+                prev_closing_month = current_month - 1
+                prev_closing_year = current_year
+                
+            start_date = datetime(prev_closing_year, prev_closing_month, card.closing_day).date()
+            end_date = datetime(current_year, current_month, card.closing_day).date()
+    else:
+        # Lógica para meses específicos (jan, fev, mar, etc.)
+        month_map = {
+            'jan': 1, 'fev': 2, 'mar': 3, 'abr': 4, 'mai': 5, 'jun': 6,
+            'jul': 7, 'ago': 8, 'set': 9, 'out': 10, 'nov': 11, 'dez': 12
+        }
+        
+        selected_month = month_map.get(month)
+        if not selected_month:
+            return jsonify({'success': False, 'message': 'Mês inválido'})
+        
+        # Se o mês selecionado for futuro em relação ao mês atual
+        if selected_month < current_month:
+            selected_year = current_year + 1
+        else:
+            selected_year = current_year
+        
+        # Definir início e fim do mês selecionado
+        start_date = datetime(selected_year, selected_month, 1).date()
+        
+        # Calcular o último dia do mês
+        if selected_month == 12:
+            end_month = 1
+            end_year = selected_year + 1
+        else:
+            end_month = selected_month + 1
+            end_year = selected_year
+        
+        end_date = datetime(end_year, end_month, 1).date()
+    
+    # Buscar transações no período definido
+    transactions = Transaction.query.filter(
+        Transaction.credit_card_id == card.id,
+        Transaction.trans_type == 'saida',
+        Transaction.date >= start_date,
+        Transaction.date < end_date
+    ).order_by(Transaction.date.desc()).all()
+    
+    # Formatar transações para JSON
+    transactions_json = []
+    for txn in transactions:
+        transactions_json.append({
+            'id': txn.id,
+            'date': txn.date.strftime('%d-%b-%Y'),
+            'description': txn.description,
+            'value': txn.value,
+            'category': txn.category
+        })
+    
+    return jsonify({
+        'success': True,
+        'transactions': transactions_json
+    })
     
     # Desvincular transações associadas a este cartão
     transactions = Transaction.query.filter_by(credit_card_id=card.id).all()

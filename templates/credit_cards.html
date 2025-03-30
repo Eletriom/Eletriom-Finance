@@ -26,6 +26,9 @@
           <td class="font-weight-bold">R$ {{ card.limit | round(2) }}</td>
           <td class="font-weight-bold {% if card.available_limit < (card.limit * 0.2) %}text-danger{% elif card.available_limit < (card.limit * 0.5) %}text-warning{% else %}text-success{% endif %}">
             R$ {{ card.available_limit | round(2) }}
+            <div class="progress mt-1" style="height: 10px;">
+              <div class="progress-bar {% if card.available_limit < (card.limit * 0.2) %}bg-danger{% elif card.available_limit < (card.limit * 0.5) %}bg-warning{% else %}bg-success{% endif %}" role="progressbar" style="width: {{ ((card.limit - card.available_limit) / card.limit * 100) | round }}%" aria-valuenow="{{ ((card.limit - card.available_limit) / card.limit * 100) | round }}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
           </td>
           <td>Dia {{ card.due_day }}</td>
           <td>Dia {{ card.closing_day }}</td>
@@ -171,17 +174,32 @@
             <div class="card">
               <div class="card-body">
                 <h5 class="card-title"><i class="fas fa-chart-pie mr-2"></i>Resumo da Fatura Atual</h5>
-                <div class="progress mb-3" style="height: 25px;">
-                  <div id="view-card-usage-bar" class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
-                </div>
                 <p><strong>Total da Fatura:</strong> R$ <span id="view-card-invoice-total"></span></p>
                 <p><strong>Vencimento:</strong> <span id="view-card-invoice-due-date"></span></p>
+                <p><strong>Limite Utilizado:</strong> <span id="view-card-limit-usage-percent"></span>%</p>
               </div>
             </div>
           </div>
         </div>
         
-        <h5 class="mb-3"><i class="fas fa-list-alt mr-2"></i>Transações da Fatura Atual</h5>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0"><i class="fas fa-list-alt mr-2"></i>Transações da Fatura Atual</h5>
+          <select id="invoice-month-selector" class="form-control" style="width: auto;">
+            <option value="current">Fatura Atual</option>
+            <option value="jan">Janeiro</option>
+            <option value="fev">Fevereiro</option>
+            <option value="mar">Março</option>
+            <option value="abr">Abril</option>
+            <option value="mai">Maio</option>
+            <option value="jun">Junho</option>
+            <option value="jul">Julho</option>
+            <option value="ago">Agosto</option>
+            <option value="set">Setembro</option>
+            <option value="out">Outubro</option>
+            <option value="nov">Novembro</option>
+            <option value="dez">Dezembro</option>
+          </select>
+        </div>
         <div class="table-responsive">
           <table class="table table-sm table-hover">
             <thead>
@@ -249,6 +267,28 @@
       });
     });
     
+    // Adicionar event listener para o seletor de mês da fatura
+    document.addEventListener('click', function(event) {
+      if (event.target.closest('#invoice-month-selector')) {
+        const cardId = document.getElementById('view-card-id') ? document.getElementById('view-card-id').value : null;
+        if (cardId) {
+          const selectedMonth = document.getElementById('invoice-month-selector').value;
+          loadCardTransactions(cardId, selectedMonth);
+        }
+      }
+    });
+    
+    // Adicionar event listener para mudança no seletor de mês
+    document.addEventListener('change', function(event) {
+      if (event.target.id === 'invoice-month-selector') {
+        const cardId = document.getElementById('view-card-id') ? document.getElementById('view-card-id').value : null;
+        if (cardId) {
+          const selectedMonth = event.target.value;
+          loadCardTransactions(cardId, selectedMonth);
+        }
+      }
+    });
+    
     // Configurar exclusão de cartão
     document.querySelectorAll('.btn-delete-card').forEach(button => {
       button.addEventListener('click', function() {
@@ -284,27 +324,21 @@
               document.getElementById('edit-card-due-day').value = data.card.due_day;
               document.getElementById('edit-card-closing-day').value = data.card.closing_day;
             } else if (mode === 'view') {
+              // Armazenar o ID do cartão para uso posterior
+              if (!document.getElementById('view-card-id')) {
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.id = 'view-card-id';
+                document.getElementById('viewCardModal').querySelector('.modal-body').appendChild(hiddenInput);
+              }
+              document.getElementById('view-card-id').value = data.card.id;
+              
               // Preencher detalhes para visualização
               document.getElementById('view-card-name').textContent = data.card.name;
               document.getElementById('view-card-limit').textContent = data.card.limit.toFixed(2);
               document.getElementById('view-card-available').textContent = data.card.available_limit.toFixed(2);
               document.getElementById('view-card-due-day').textContent = data.card.due_day;
               document.getElementById('view-card-closing-day').textContent = data.card.closing_day;
-              
-              // Calcular e exibir porcentagem de uso
-              const usagePercent = ((data.card.limit - data.card.available_limit) / data.card.limit * 100).toFixed(1);
-              const usageBar = document.getElementById('view-card-usage-bar');
-              usageBar.style.width = `${usagePercent}%`;
-              usageBar.textContent = `${usagePercent}%`;
-              
-              // Definir cor da barra de progresso com base no uso
-              if (usagePercent > 80) {
-                usageBar.className = 'progress-bar bg-danger';
-              } else if (usagePercent > 50) {
-                usageBar.className = 'progress-bar bg-warning';
-              } else {
-                usageBar.className = 'progress-bar bg-success';
-              }
               
               // Exibir total da fatura e data de vencimento
               // Calcular o valor total da fatura somando as transações atuais
@@ -316,30 +350,17 @@
               document.getElementById('view-card-invoice-due-date').textContent = 
                 data.card.next_due_date;
               
-              // Preencher tabela de transações
-              const transactionsTable = document.getElementById('view-card-transactions');
-              transactionsTable.innerHTML = '';
+              // Calcular e exibir a porcentagem de limite utilizado
+              const limitUsagePercent = ((data.card.limit - data.card.available_limit) / data.card.limit * 100).toFixed(1);
+              document.getElementById('view-card-limit-usage-percent').textContent = limitUsagePercent;
               
-              if (data.transactions && data.transactions.length > 0) {
-                data.transactions.forEach(txn => {
-                  const row = document.createElement('tr');
-                  row.innerHTML = `
-                    <td>${txn.date}</td>
-                    <td>${txn.description}</td>
-                    <td class="text-danger">R$ ${txn.value.toFixed(2)}</td>
-                    <td>${txn.category ? `<span class="badge badge-info">${txn.category}</span>` : ''}</td>
-                  `;
-                  transactionsTable.appendChild(row);
-                });
-              } else {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                  <td colspan="4" class="text-center py-3">
-                    <i class="fas fa-info-circle mr-2 text-info"></i>Não há transações na fatura atual.
-                  </td>
-                `;
-                transactionsTable.appendChild(row);
+              // Resetar o seletor de mês para 'Fatura Atual'
+              if (document.getElementById('invoice-month-selector')) {
+                document.getElementById('invoice-month-selector').value = 'current';
               }
+              
+              // Preencher tabela de transações
+              loadCardTransactions(cardId, 'current');
             }
           } else {
             alert('Erro ao carregar detalhes do cartão: ' + data.message);
@@ -389,6 +410,66 @@
         .catch(error => {
           console.error('Erro:', error);
           alert('Erro ao excluir cartão.');
+        });
+    }
+    
+    // Função para carregar transações do cartão de acordo com o mês selecionado
+    function loadCardTransactions(cardId, month) {
+      // Atualizar o título da seção de transações
+      const transactionTitle = document.querySelector('.d-flex.justify-content-between.align-items-center.mb-3 h5');
+      if (month === 'current') {
+        transactionTitle.innerHTML = '<i class="fas fa-list-alt mr-2"></i>Transações da Fatura Atual';
+      } else {
+        const monthNames = {
+          'jan': 'Janeiro', 'fev': 'Fevereiro', 'mar': 'Março', 'abr': 'Abril',
+          'mai': 'Maio', 'jun': 'Junho', 'jul': 'Julho', 'ago': 'Agosto',
+          'set': 'Setembro', 'out': 'Outubro', 'nov': 'Novembro', 'dez': 'Dezembro'
+        };
+        transactionTitle.innerHTML = `<i class="fas fa-list-alt mr-2"></i>Transações de ${monthNames[month]}`;
+      }
+      
+      // Fazer requisição para obter as transações do mês selecionado
+      fetch(`/credit_cards/${cardId}/transactions?month=${month}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const transactionsContainer = document.getElementById('view-card-transactions');
+            transactionsContainer.innerHTML = '';
+            
+            if (data.transactions && data.transactions.length > 0) {
+              // Preencher a tabela com as transações
+              data.transactions.forEach(txn => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                  <td>${txn.date}</td>
+                  <td>${txn.description}</td>
+                  <td class="font-weight-bold text-danger">R$ ${txn.value.toFixed(2)}</td>
+                  <td>${txn.category ? `<span class="badge badge-info">${txn.category}</span>` : ''}</td>
+                `;
+                transactionsContainer.appendChild(row);
+              });
+              
+              // Atualizar o total da fatura para o mês selecionado
+              if (month !== 'current') {
+                const invoiceTotal = data.transactions.reduce((sum, txn) => sum + txn.value, 0);
+                document.getElementById('view-card-invoice-total').textContent = invoiceTotal.toFixed(2);
+              }
+            } else {
+              // Exibir mensagem quando não há transações
+              const row = document.createElement('tr');
+              row.innerHTML = `
+                <td colspan="4" class="text-center py-3">
+                  <i class="fas fa-info-circle mr-2 text-info"></i>Não há transações para este período.
+                </td>
+              `;
+              transactionsContainer.appendChild(row);
+            }
+          } else {
+            console.error('Erro ao carregar transações:', data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Erro:', error);
         });
     }
   });
