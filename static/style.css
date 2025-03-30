@@ -32,6 +32,47 @@ body {
 .navbar {
   box-shadow: var(--box-shadow);
   background: var(--primary-gradient);
+  padding: 15px 0 25px 0; /* Aumentar o padding vertical para melhor alinhamento */
+  margin-bottom: 15px; /* Espaço entre a navbar e o conteúdo que vem após o botão */
+  position: relative;
+  z-index: 50; /* Garantir que a navbar tenha um z-index menor que o botão */
+  display: flex;
+  align-items: center;
+}
+
+/* Centralizar verticalmente todos os itens da barra */
+.navbar-nav {
+  align-items: center;
+}
+
+.navbar-nav .nav-item {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.navbar .nav-link {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  white-space: nowrap; /* Impedir quebra de texto */
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  padding-top: 0;
+  padding-bottom: 0;
+  height: 100%;
+}
+
+/* Espaço no centro da barra para acomodar o botão */
+.navbar .navbar-center-space {
+  width: 200px; /* Largura suficiente para o botão */
+  height: 1px; /* Minimizar o impacto no layout */
+  visibility: hidden;
 }
 
 .navbar-dark .navbar-brand,
@@ -312,4 +353,57 @@ select.form-control {
   background: #2980b9;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Estilo do botão Nova Transação */
+.position-relative {
+  position: relative;
+}
+
+.btn-container {
+  margin-top: -10px;
+  margin-bottom: 20px;
+  position: relative;
+  z-index: 40;
+}
+
+.btn-nova-transacao {
+  font-weight: bold;
+  padding: 12px 30px;
+  font-size: 1.05rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+  border-radius: 30px;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.btn-nova-transacao:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 10px rgba(0,0,0,0.2);
+}
+
+/* Melhorias para os dropdowns */
+.navbar .dropdown-menu {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  padding: 0.75rem 0;
+  margin-top: 0.5rem;
+  z-index: 150; /* Garantir que os dropdowns fiquem acima do botão */
+}
+
+.navbar .dropdown-item {
+  padding: 0.6rem 1.5rem;
+  transition: all 0.2s;
+}
+
+.navbar .dropdown-item:hover, 
+.navbar .dropdown-item:focus {
+  background-color: rgba(52, 152, 219, 0.1);
+  color: var(--accent-color);
+}
+
+.navbar .dropdown-divider {
+  margin: 0.5rem 0;
+  border-color: rgba(0,0,0,0.05);
 }
