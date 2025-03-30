@@ -157,8 +157,14 @@
     const yearSelector = document.getElementById('filter-year');
     const currentYear = new Date().getFullYear();
     
-    // Adicionar os últimos 5 anos
-    for (let i = 0; i < 5; i++) {
+    // Adicionar opção para todos os anos
+    const allOption = document.createElement('option');
+    allOption.value = 'todos';
+    allOption.textContent = 'Todos os anos';
+    yearSelector.appendChild(allOption);
+    
+    // Adicionar os últimos 5 anos e o próximo ano (para projeções futuras)
+    for (let i = -1; i < 5; i++) {  // Começando de -1 para incluir o próximo ano
       const year = currentYear - i;
       const option = document.createElement('option');
       option.value = year;
@@ -174,11 +180,33 @@
     
     let filteredData = dailyBalanceData;
     
+    // Mapear abreviações de mês em inglês para português
+    const monthMapEnToPt = {
+      'jan': 'jan',
+      'feb': 'fev',
+      'mar': 'mar',
+      'apr': 'abr',
+      'may': 'mai',
+      'jun': 'jun',
+      'jul': 'jul',
+      'aug': 'ago',
+      'sep': 'set',
+      'oct': 'out',
+      'nov': 'nov',
+      'dec': 'dez'
+    };
+    
     // Filtrar por mês e ano se não for "todos"
     if (selectedMonth !== 'todos') {
       filteredData = filteredData.filter(item => {
         const dateParts = item.date.split('-');
-        const month = dateParts[1].toLowerCase();
+        let month = dateParts[1].toLowerCase();
+        
+        // Converter mês em inglês para português se necessário
+        if (monthMapEnToPt[month]) {
+          month = monthMapEnToPt[month];
+        }
+        
         return month === selectedMonth.toLowerCase();
       });
     }
@@ -199,9 +227,41 @@
   function updateChart(data) {
     const ctx = document.getElementById('grafico-saldo-diario').getContext('2d');
     
-    // Extrair datas e saldos (invertendo a ordem para datas mais recentes à direita)
-    const dates = [...data.map(item => item.date)].reverse();
-    const balances = [...data.map(item => item.accumulated_balance)].reverse();
+    // Filtrar apenas os dias que possuem movimentações (entrada ou saída)
+    const filteredData = data.filter(item => item.income > 0 || item.expense > 0);
+    
+    // Extrair datas e saldos (mantendo a ordem cronológica - meses mais antigos à esquerda)
+    const dates = [...filteredData.map(item => {
+      // Traduzir nomes dos meses para português
+      const dateParts = item.date.split('-');
+      const day = dateParts[0];
+      let month = dateParts[1].toLowerCase();
+      const year = dateParts[2];
+      
+      // Mapear abreviações de mês em inglês para português
+      const monthMap = {
+        'jan': 'jan',
+        'feb': 'fev',
+        'mar': 'mar',
+        'apr': 'abr',
+        'may': 'mai',
+        'jun': 'jun',
+        'jul': 'jul',
+        'aug': 'ago',
+        'sep': 'set',
+        'oct': 'out',
+        'nov': 'nov',
+        'dec': 'dez'
+      };
+      
+      // Substituir mês se estiver no mapa
+      if (monthMap[month]) {
+        month = monthMap[month];
+      }
+      
+      return `${day}-${month}-${year}`;
+    })];
+    const balances = [...filteredData.map(item => item.accumulated_balance)];
     
     // Destruir gráfico anterior se existir
     if (window.balanceChart) {
@@ -395,9 +455,22 @@
     document.getElementById('filter-month').addEventListener('change', filterData);
     document.getElementById('filter-year').addEventListener('change', filterData);
     
+    // Definir o ano atual como padrão no seletor de ano
+    const yearSelector = document.getElementById('filter-year');
+    const currentYear = new Date().getFullYear();
+    for(let i = 0; i < yearSelector.options.length; i++) {
+      if(yearSelector.options[i].value == currentYear) {
+        yearSelector.selectedIndex = i;
+        break;
+      }
+    }
+    
     // Carregar dados iniciais
     updateChart(dailyBalanceData);
     updateTable(dailyBalanceData);
+    
+    // Aplicar o filtro para mostrar apenas o ano atual
+    filterData();
   });
 </script>
 {% endblock %}

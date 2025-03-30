@@ -95,6 +95,11 @@ select.form-control {
   font-size: 1rem;
 }
 
+/* Estilo específico para o seletor de mês */
+#filter-month {
+  min-width: 160px; /* Aumenta levemente a largura lateral */
+}
+
 .form-control:focus {
   border-color: var(--accent-color);
   box-shadow: none;

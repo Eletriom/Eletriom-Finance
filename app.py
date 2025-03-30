@@ -1222,9 +1222,13 @@ def daily_balance():
     # Dicionário para armazenar saldo por dia
     daily_balances = {}
     
+    # Data atual
+    current_date = datetime.now().date()
+    
     # Calcular saldo acumulado e transações por dia
     accumulated_balance = 0.0
     
+    # Processar transações passadas
     for txn in transactions:
         date_str = txn.date.strftime("%d-%b-%Y")
         
@@ -1259,6 +1263,58 @@ def daily_balance():
             'trans_type': txn.trans_type,
             'category': txn.category
         })
+    
+    # Projetar saldo para os próximos 365 dias
+    projected_balance = accumulated_balance
+    
+    # Filtrar transações futuras (transações recorrentes e agendadas)
+    future_transactions = [t for t in transactions if t.date > current_date]
+    
+    # Gerar datas para os próximos 365 dias
+    for i in range(1, 366):  # Começando de 1 para não incluir o dia atual novamente
+        future_date = current_date + timedelta(days=i)
+        date_str = future_date.strftime("%d-%b-%Y")
+        
+        # Inicializar o registro do dia
+        if date_str not in daily_balances:
+            daily_balances[date_str] = {
+                'date': date_str,
+                'income': 0.0,
+                'expense': 0.0,
+                'daily_balance': 0.0,
+                'accumulated_balance': projected_balance,  # Usar o saldo projetado atual
+                'transactions': []
+            }
+        
+        # Filtrar transações para este dia específico
+        day_transactions = [t for t in future_transactions if t.date == future_date]
+        
+        # Calcular mudança no saldo para o dia
+        day_income = 0.0
+        day_expense = 0.0
+        
+        for txn in day_transactions:
+            if txn.trans_type == 'entrada':
+                day_income += txn.value
+                projected_balance += txn.value
+            elif txn.trans_type == 'saida':
+                day_expense += txn.value
+                projected_balance -= txn.value
+            
+            # Adicionar transação à lista do dia
+            daily_balances[date_str]['transactions'].append({
+                'id': txn.id,
+                'description': txn.description,
+                'value': txn.value,
+                'trans_type': txn.trans_type,
+                'category': txn.category
+            })
+        
+        # Atualizar valores do dia
+        daily_balances[date_str]['income'] = day_income
+        daily_balances[date_str]['expense'] = day_expense
+        daily_balances[date_str]['daily_balance'] = day_income - day_expense
+        daily_balances[date_str]['accumulated_balance'] = projected_balance
     
     # Processar informações de faturas de cartões de crédito
     credit_card_data = []
@@ -1342,11 +1398,22 @@ def daily_balance():
         
         credit_card_data.append(card_data)
     
-    # Converter para lista e filtrar apenas dias com transações
-    daily_balance_list = [balance for balance in daily_balances.values() if balance['income'] > 0 or balance['expense'] > 0]
+    # Converter para lista e incluir todos os dias, não apenas os que têm transações
+    # Isso garante que o saldo acumulado seja contínuo
+    daily_balance_list = list(daily_balances.values())
     
     # Ordenar por data (mais antiga primeiro)
     daily_balance_list.sort(key=lambda x: datetime.strptime(x['date'], "%d-%b-%Y"))
+    
+    # Garantir que o saldo acumulado seja progressivo
+    prev_balance = 0.0
+    for i, day_data in enumerate(daily_balance_list):
+        if i > 0:
+            prev_balance = daily_balance_list[i-1]['accumulated_balance']
+            day_data['accumulated_balance'] = prev_balance + day_data['daily_balance']
+    
+    # Filtrar dias sem movimentações para o gráfico, mas manter todos os dias para cálculos
+    # Isso será usado apenas no frontend, o filtro final será feito no JavaScript
     
     return render_template('daily_balance.html', 
                            daily_balance_data=daily_balance_list,
