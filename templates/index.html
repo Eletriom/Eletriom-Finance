@@ -88,14 +88,8 @@
           </td>
           <td data-label="Descrição">{{ txn.description }}</td>
           <td data-label="Categoria">
-            {% if txn.category_id %}
-              {% set cat = namespace(name='') %}
-              {% for c in categories %}
-                {% if c.id == txn.category_id %}
-                  {% set cat.name = c.name %}
-                {% endif %}
-              {% endfor %}
-              <span class="badge badge-info">{{ cat.name|default_if_none }}</span>
+            {% if txn.category %}
+              <span class="badge badge-info">{{ txn.category }}</span>
             {% endif %}
           </td>
           <td data-label="Saldo" class="font-weight-bold">R$ {{ txn.balance | safe_round(2) }}</td>
