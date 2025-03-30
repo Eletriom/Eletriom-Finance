@@ -1,7 +1,7 @@
 # Eletriom Finance - Sistema de Gerenciamento Financeiro
 
 ![Eletriom Finance](https://img.shields.io/badge/Eletriom-Finance-blue)
-![Versão](https://img.shields.io/badge/Versão-1.0-green)
+![Versão](https://img.shields.io/badge/Versão-1.1-green)
 ![Licença](https://img.shields.io/badge/Licença-MIT-yellow)
 
 ## 📋 Sobre o Projeto
@@ -11,64 +11,82 @@ Eletriom Finance é um sistema completo de gerenciamento financeiro pessoal dese
 ## ✨ Principais Funcionalidades
 
 ### 📊 Dashboard Financeiro
-- Visualização do saldo atual
-- Resumo de entradas e saídas do mês
+- Visualização do saldo atual em tempo real
+- Resumo de entradas e saídas do mês com gráficos interativos
 - Gráficos de distribuição de gastos por categoria
-- Análise de tendências financeiras
+- Análise de tendências financeiras com comparativos mensais
+- Previsão de gastos baseada no histórico
 
 ### 💰 Gerenciamento de Transações
-- Registro de entradas e saídas
-- Categorização de transações
-- Transações recorrentes
-- Importação de extratos em CSV
+- Registro rápido de entradas e saídas
+- Categorização inteligente de transações
+- Sistema de transações recorrentes automatizado
+- Importação de extratos em CSV com reconhecimento automático
+- Tags personalizáveis para melhor organização
 
 ### 💳 Cartões de Crédito
 - Cadastro e gerenciamento de múltiplos cartões
-- Controle de limite disponível
+- Controle de limite disponível em tempo real
 - Acompanhamento de datas de fechamento e vencimento
-- Visualização de faturas por período
+- Visualização de faturas por período com filtros avançados
+- Alertas personalizáveis de limite
 
 ### 📅 Saldo Diário
-- Acompanhamento da evolução do saldo
+- Acompanhamento da evolução do saldo com gráficos interativos
 - Histórico detalhado de transações por dia
-- Filtros por mês e ano
-- Exportação de relatórios
+- Filtros avançados por período, categoria e tipo
+- Exportação de relatórios em múltiplos formatos (PDF, CSV, Excel)
+- Projeção de saldo futuro
 
 ### 📑 Faturas Pendentes
-- Visualização de faturas a vencer
-- Alertas de vencimento
-- Histórico de pagamentos
+- Visualização clara de faturas a vencer
+- Sistema de alertas personalizáveis
+- Histórico completo de pagamentos
+- Categorização automática de despesas recorrentes
+- Priorização inteligente de pagamentos
 
 ## 🚀 Instalação e Configuração
 
 ### Pré-requisitos
-- Python 3.6 ou superior
+- Python 3.8 ou superior
 - Pip (gerenciador de pacotes Python)
+- Navegador web moderno
 
 ### Passos para Instalação
 
-1. Clone o repositório ou baixe os arquivos do projeto
-
-2. Instale as dependências necessárias:
+1. Clone o repositório:
+   ```bash
+   git clone https://github.com/eletriom/finance.git
+   cd finance
    ```
+
+2. Crie e ative um ambiente virtual:
+   ```bash
+   python -m venv venv
+   .\venv\Scripts\activate  # Windows
+   source venv/bin/activate  # Linux/Mac
+   ```
+
+3. Instale as dependências:
+   ```bash
    pip install -r requirements.txt
    ```
 
-3. Configure as variáveis de ambiente (opcional):
+4. Configure as variáveis de ambiente:
    - Crie um arquivo `.env` na raiz do projeto
-   - Defina as variáveis necessárias (MAIL_USERNAME, MAIL_PASSWORD, etc.)
+   - Copie o conteúdo de `.env.example` e ajuste conforme necessário
 
-4. Inicialize o banco de dados (na primeira execução):
-   ```
+5. Inicialize o banco de dados:
+   ```bash
    python app.py init-db
    ```
 
-5. Execute a aplicação:
-   ```
+6. Execute a aplicação:
+   ```bash
    python app.py
    ```
 
-6. Acesse a aplicação no navegador:
+7. Acesse no navegador:
    ```
    http://localhost:5000
    ```
@@ -76,52 +94,54 @@ Eletriom Finance é um sistema completo de gerenciamento financeiro pessoal dese
 ## 📱 Como Usar
 
 ### Primeiros Passos
-1. Registre-se no sistema com seu e-mail e senha
-2. Faça login para acessar o dashboard principal
-3. Comece adicionando suas transações e cartões de crédito
+1. Crie sua conta com e-mail e senha
+2. Complete seu perfil financeiro
+3. Configure suas preferências de notificação
+4. Comece adicionando suas transações e cartões
 
-### Adicionando Transações
-1. Clique no botão "Nova Transação" no dashboard
-2. Preencha os dados da transação (data, valor, descrição, tipo)
-3. Selecione uma categoria para melhor organização
-4. Salve a transação
+### Gerenciando Finanças
+- Use o dashboard para uma visão geral
+- Cadastre suas transações diárias
+- Configure transações recorrentes
+- Acompanhe seus cartões de crédito
+- Monitore faturas pendentes
 
-### Importando Extratos
-1. Acesse a opção "Importar Extrato"
-2. Faça o upload do arquivo CSV seguindo o modelo disponível
-3. Revise as transações importadas
-4. Confirme a importação
-
-### Gerenciando Cartões de Crédito
-1. Acesse a seção "Cartões de Crédito"
-2. Clique em "Novo Cartão" para adicionar um cartão
-3. Preencha os dados do cartão (nome, limite, dia de vencimento, dia de fechamento)
-4. Acompanhe o limite disponível e as faturas
+### Dicas de Uso
+- Mantenha suas transações em dia
+- Use as tags para melhor organização
+- Configure alertas importantes
+- Exporte relatórios regularmente
+- Revise suas metas financeiras mensalmente
 
 ## 🔧 Tecnologias Utilizadas
 
-- **Backend**: Python, Flask, SQLAlchemy
-- **Frontend**: HTML, CSS, JavaScript, Bootstrap
-- **Banco de Dados**: SQLite
-- **Gráficos**: Chart.js
+- **Backend**: Python 3.8+, Flask 2.0+, SQLAlchemy 1.4+
+- **Frontend**: HTML5, CSS3, JavaScript ES6+, Bootstrap 5
+- **Banco de Dados**: SQLite 3
+- **Gráficos**: Chart.js 3.7+
+- **Autenticação**: Flask-Login
+- **Processamento de Dados**: Pandas
 
 ## 🤝 Contribuição
 
-Contribuições são bem-vindas! Se você deseja melhorar o Eletriom Finance, siga estes passos:
+Contribuições são bem-vindas! Para contribuir:
 
 1. Faça um fork do projeto
 2. Crie uma branch para sua feature (`git checkout -b feature/nova-funcionalidade`)
-3. Faça commit das suas alterações (`git commit -m 'Adiciona nova funcionalidade'`)
+3. Faça commit das alterações (`git commit -m 'Adiciona nova funcionalidade'`)
 4. Faça push para a branch (`git push origin feature/nova-funcionalidade`)
 5. Abra um Pull Request
 
 ## 📄 Licença
 
-Este projeto está licenciado sob a Licença MIT - veja o arquivo LICENSE para detalhes.
+Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
 
 ## 📞 Contato
 
-Para sugestões, dúvidas ou suporte, entre em contato através do e-mail: contato@eletriomfinance.com
+Para sugestões, dúvidas ou suporte:
+- Email: contato@eletriomfinance.com
+- Twitter: [@EletriomFinance](https://twitter.com/eletriomfinance)
+- LinkedIn: [Eletriom Finance](https://linkedin.com/company/eletriomfinance)
 
 ---
 
