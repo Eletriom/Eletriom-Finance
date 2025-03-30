@@ -381,7 +381,20 @@
     transactionsTable.innerHTML = '';
     
     if (dayData.transactions && dayData.transactions.length > 0) {
-      dayData.transactions.forEach(txn => {
+      // Filtrar transações para remover duplicatas usando Map (preserva a ordem)
+      const uniqueTransactions = Array.from(
+        dayData.transactions.reduce((map, txn) => {
+          // Só usamos o ID como chave se ele existir
+          const key = txn.id ? txn.id.toString() : `${txn.description}-${txn.value}-${txn.trans_type}`;
+          if (!map.has(key)) {
+            map.set(key, txn);
+          }
+          return map;
+        }, new Map()).values()
+      );
+      
+      // Exibir transações únicas
+      uniqueTransactions.forEach(txn => {
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>

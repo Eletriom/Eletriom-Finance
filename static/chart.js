@@ -2,24 +2,89 @@
 function getDadosGastosPorCategoria(transactions, mes) {
     // Filtrar transações por mês e tipo 'saida'
     const transacoesFiltradas = transactions.filter(txn => {
-        if (mes === 'todos') return txn.trans_type === 'saida';
+        if (!txn || !txn.date || !txn.trans_type) return false;
+        
+        // Verificar se é uma transação de saída
+        if (txn.trans_type !== 'saida') return false;
+        
+        // Se for "todos os meses", incluir todas as saídas
+        if (mes === 'todos') return true;
         
         // Extrair mês da data (formato: DD-MMM-YYYY)
         const dataParts = txn.date.split('-');
+        if (dataParts.length < 3) return false;
+        
         const mesTxn = dataParts[1].toLowerCase();
         
-        return txn.trans_type === 'saida' && mesTxn === mes.toLowerCase();
+        // Mapear abreviações de mês em inglês para português
+        const monthMap = {
+            'jan': 'jan',
+            'feb': 'fev',
+            'mar': 'mar',
+            'apr': 'abr',
+            'may': 'mai',
+            'jun': 'jun',
+            'jul': 'jul',
+            'aug': 'ago',
+            'sep': 'set',
+            'oct': 'out',
+            'nov': 'nov',
+            'dec': 'dez'
+        };
+        
+        // Converter mês da transação para o formato português
+        let mesComparar = mesTxn;
+        if (monthMap[mesComparar]) {
+            mesComparar = monthMap[mesComparar];
+        }
+        
+        // Comparar se o mês da transação é igual ao mês selecionado
+        return mesComparar === mes.toLowerCase();
+    });
+    
+    // Criar um Map para rastrear IDs de transações já processadas
+    // Usamos Map em vez de Set para poder guardar o ID do pai das recorrências
+    const processedTransactions = new Map();
+    
+    // Primeiro passo: identificar transações recorrentes do mesmo grupo
+    transacoesFiltradas.forEach(txn => {
+        if (txn.parent_id) {
+            // Se for uma transação filha (recorrente), rastrear sob o ID do pai
+            processedTransactions.set(txn.id, txn.parent_id);
+        }
     });
     
     // Agrupar por categoria
     const gastosPorCategoria = {};
     
     transacoesFiltradas.forEach(txn => {
+        // Evitar transações duplicadas verificando o ID
+        if (processedTransactions.has(txn.id) && !txn.parent_id) {
+            // Se já processamos esta transação e não é uma filha, pular
+            return;
+        }
+        
+        // Para transações com parent_id, verificar se já processamos o pai ou outro irmão
+        if (txn.parent_id && Array.from(processedTransactions.values()).includes(txn.parent_id)) {
+            // Se já processamos outra recorrência do mesmo grupo, pular
+            return;
+        }
+        
+        // Adicionar ID à lista de transações processadas
+        if (!processedTransactions.has(txn.id)) {
+            processedTransactions.set(txn.id, txn.id);
+        }
+        
         const categoria = txn.category || 'Sem categoria';
         if (!gastosPorCategoria[categoria]) {
             gastosPorCategoria[categoria] = 0;
         }
-        gastosPorCategoria[categoria] += txn.value;
+        
+        // Garantir que o valor seja um número antes de somar
+        const valor = parseFloat(txn.value);
+        if (!isNaN(valor)) {
+            gastosPorCategoria[categoria] += valor;
+        }
     });
     
     // Converter para arrays para Chart.js
@@ -34,7 +99,15 @@ function getDadosGastosPorCategoria(transactions, mes) {
 
 // Função para criar/atualizar o gráfico
 function atualizarGrafico(transactions) {
-    const mesSelecionado = document.getElementById('seletor-mes').value;
+    let mesSelecionado = document.getElementById('seletor-mes').value;
+    
+    // Se nenhum mês foi selecionado, usar o mês atual
+    if (!mesSelecionado) {
+        const hoje = new Date();
+        const meses = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+        mesSelecionado = meses[hoje.getMonth()];
+    }
+    
     const dados = getDadosGastosPorCategoria(transactions, mesSelecionado);
     
     // Cores para o gráfico

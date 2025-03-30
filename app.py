@@ -371,8 +371,10 @@ def profile():
 
 # Rota principal - Dashboard com extrato e saldo acumulado
 @app.route('/')
-@login_required
 def index():
+    if not current_user.is_authenticated:
+        return redirect(url_for('home'))
+    
     transactions = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.date).all()
     credit_cards = CreditCard.query.filter_by(user_id=current_user.id).all()
     balance = 0.0
@@ -1635,6 +1637,21 @@ def pending_invoices():
     return render_template('pending_invoices.html', 
                            pending_invoices=pending_invoices,
                            current_balance=current_balance)
+
+# Rota para a página inicial (landing page)
+@app.route('/home')
+def home():
+    return render_template('landing.html')
+
+# Rota para a página de política de privacidade
+@app.route('/privacy')
+def privacy_policy():
+    return render_template('privacy_policy.html')
+
+# Rota para a página de termos de uso
+@app.route('/terms')
+def terms_of_use():
+    return render_template('terms_of_use.html')
 
 if __name__ == '__main__':
     with app.app_context():

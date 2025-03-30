@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eletriom Finance - Gerencie suas finanças com facilidade e eficiência</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  <style>
+    .landing-hero {
+      background: linear-gradient(135deg, #3498db, #1abc9c);
+      color: #fff;
+      padding: 120px 0 100px;
+      margin-bottom: 0;
+    }
+    .feature-box {
+      padding: 30px 20px;
+      border-radius: 10px;
+      text-align: center;
+      transition: all 0.3s ease;
+      height: 100%;
+    }
+    .feature-box:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    .feature-icon {
+      font-size: 3rem;
+      margin-bottom: 20px;
+      color: #3498db;
+    }
+    .testimonial {
+      background-color: #f8f9fa;
+      padding: 25px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    }
+    .testimonial img {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 15px;
+    }
+    .pricing-card {
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+      transition: all 0.3s ease;
+      height: 100%;
+    }
+    .pricing-card:hover {
+      transform: scale(1.03);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+    .pricing-header {
+      background-color: #3498db;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    .pricing-body {
+      padding: 20px;
+    }
+    .pricing-price {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #3498db;
+      margin: 20px 0;
+    }
+    .cta-section {
+      background: linear-gradient(135deg, #3498db, #1abc9c);
+      padding: 80px 0;
+      color: white;
+      text-align: center;
+    }
+    .landing-footer {
+      background-color: #343a40;
+      color: white;
+      padding: 40px 0;
+    }
+    .footer-links a {
+      color: rgba(255, 255, 255, 0.7);
+      margin-right: 15px;
+    }
+    .footer-links a:hover {
+      color: white;
+      text-decoration: none;
+    }
+    .btn-login {
+      padding: 10px 30px;
+      font-weight: 600;
+      border-radius: 30px;
+      background-color: #fff;
+      color: #3498db;
+      transition: all 0.3s ease;
+    }
+    .btn-login:hover {
+      background-color: #f8f9fa;
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    .btn-cta {
+      padding: 15px 40px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border-radius: 30px;
+      background-color: #fff;
+      color: #3498db;
+      transition: all 0.3s ease;
+      margin-top: 20px;
+    }
+    .btn-cta:hover {
+      background-color: #f8f9fa;
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    .app-screenshot {
+      border-radius: 10px;
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+      <a class="navbar-brand" href="#"><i class="fas fa-bolt mr-2"></i>Eletriom Finance</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item"><a class="nav-link" href="#features">Recursos</a></li>
+          <li class="nav-item"><a class="nav-link" href="#testimonials">Depoimentos</a></li>
+          <li class="nav-item"><a class="nav-link" href="#pricing">Planos</a></li>
+          <li class="nav-item"><a class="nav-link" href="#faq">FAQ</a></li>
+          <li class="nav-item"><a class="btn btn-login ml-3" href="{{ url_for('login') }}">Entrar</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="landing-hero">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-lg-6">
+          <h1 class="display-4 font-weight-bold mb-3">Gerencie suas finanças com inteligência</h1>
+          <p class="lead mb-4">O Eletriom Finance é sua plataforma completa para gerenciar transações, controlar gastos, planejar orçamentos e alcançar suas metas financeiras.</p>
+          <div class="d-flex">
+            <a href="{{ url_for('register') }}" class="btn btn-cta mr-3">Começar Agora</a>
+            <a href="#features" class="btn btn-outline-light btn-cta">Saiba Mais</a>
+          </div>
+        </div>
+        <div class="col-lg-6 d-none d-lg-block">
+          <img src="https://cdn.pixabay.com/photo/2018/08/01/09/57/dashboard-3577386_1280.jpg" alt="Dashboard Eletriom Finance" class="img-fluid app-screenshot">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="py-5">
+    <div class="container py-5">
+      <div class="text-center mb-5">
+        <h2 class="font-weight-bold">Recursos Poderosos</h2>
+        <p class="lead text-muted">Tudo o que você precisa para gerenciar suas finanças em um só lugar</p>
+      </div>
+      <div class="row">
+        <div class="col-lg-4 mb-4">
+          <div class="feature-box">
+            <i class="fas fa-chart-line feature-icon"></i>
+            <h4>Acompanhamento em Tempo Real</h4>
+            <p>Monitore seus gastos e receitas em tempo real com dashboards e gráficos intuitivos.</p>
+          </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+          <div class="feature-box">
+            <i class="fas fa-calendar-check feature-icon"></i>
+            <h4>Gastos Recorrentes</h4>
+            <p>Configure transações recorrentes e tenha controle total sobre suas despesas mensais.</p>
+          </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+          <div class="feature-box">
+            <i class="fas fa-credit-card feature-icon"></i>
+            <h4>Gerenciamento de Cartões</h4>
+            <p>Acompanhe seus cartões de crédito, limites disponíveis e datas de vencimento.</p>
+          </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+          <div class="feature-box">
+            <i class="fas fa-file-invoice-dollar feature-icon"></i>
+            <h4>Faturas Pendentes</h4>
+            <p>Visualize todas as suas faturas pendentes e organize seus pagamentos com antecedência.</p>
+          </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+          <div class="feature-box">
+            <i class="fas fa-file-upload feature-icon"></i>
+            <h4>Importação de Dados</h4>
+            <p>Importe transações facilmente via CSV de seus bancos e cartões de crédito.</p>
+          </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+          <div class="feature-box">
+            <i class="fas fa-mobile-alt feature-icon"></i>
+            <h4>Design Responsivo</h4>
+            <p>Acesse sua conta de qualquer dispositivo - desktop, tablet ou smartphone.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section id="testimonials" class="py-5 bg-light">
+    <div class="container py-5">
+      <div class="text-center mb-5">
+        <h2 class="font-weight-bold">O Que Nossos Usuários Dizem</h2>
+        <p class="lead text-muted">Histórias reais de pessoas que transformaram suas finanças</p>
+      </div>
+      <div class="row">
+        <div class="col-lg-4 mb-4">
+          <div class="testimonial">
+            <div class="d-flex align-items-center mb-3">
+              <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Usuário">
+              <div>
+                <h5 class="mb-0">Carlos Silva</h5>
+                <p class="text-muted mb-0">Empresário</p>
+              </div>
+            </div>
+            <p>"Desde que comecei a usar o Eletriom Finance, consegui reduzir meus gastos em 30% e finalmente comecei a poupar. A visualização por categorias me ajudou a identificar onde estava gastando demais."</p>
+          </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+          <div class="testimonial">
+            <div class="d-flex align-items-center mb-3">
+              <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Usuário">
+              <div>
+                <h5 class="mb-0">Ana Rodrigues</h5>
+                <p class="text-muted mb-0">Analista de Marketing</p>
+              </div>
+            </div>
+            <p>"O controle de cartões de crédito é fantástico! Finalmente tenho clareza de quando cada fatura vence e quanto tenho disponível. Não me preocupo mais com pagamentos atrasados."</p>
+          </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+          <div class="testimonial">
+            <div class="d-flex align-items-center mb-3">
+              <img src="https://randomuser.me/api/portraits/men/67.jpg" alt="Usuário">
+              <div>
+                <h5 class="mb-0">Pedro Almeida</h5>
+                <p class="text-muted mb-0">Engenheiro</p>
+              </div>
+            </div>
+            <p>"A função de projeção de saldo futuro me ajudou a planejar grandes compras com antecedência. Consigo visualizar meu fluxo de caixa meses à frente e tomar decisões mais inteligentes."</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section id="pricing" class="py-5">
+    <div class="container py-5">
+      <div class="text-center mb-5">
+        <h2 class="font-weight-bold">Planos que se adaptam a você</h2>
+        <p class="lead text-muted">Escolha o plano ideal para suas necessidades financeiras</p>
+      </div>
+      <div class="row">
+        <div class="col-lg-4 mb-4">
+          <div class="pricing-card">
+            <div class="pricing-header">
+              <h3>Básico</h3>
+              <p>Para uso pessoal simples</p>
+            </div>
+            <div class="pricing-body text-center">
+              <div class="pricing-price">Grátis</div>
+              <ul class="list-unstyled">
+                <li class="mb-3"><i class="fas fa-check text-success mr-2"></i>Até 50 transações por mês</li>
+                <li class="mb-3"><i class="fas fa-check text-success mr-2"></i>Dashboard básico</li>
+                <li class="mb-3"><i class="fas fa-check text-success mr-2"></i>1 cartão de crédito</li>
+                <li class="mb-3"><i class="fas fa-check text-success mr-2"></i>Importação CSV básica</li>
+                <li class="mb-3"><i class="fas fa-times text-danger mr-2"></i>Sem transações recorrentes</li>
+              </ul>
+              <a href="{{ url_for('register') }}" class="btn btn-outline-primary btn-block mt-4">Começar Agora</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+          <div class="pricing-card">
+            <div class="pricing-header" style="background-color: #2ecc71;">
+              <span class="badge badge-warning mb-2">Mais Popular</span>
+              <h3>Premium</h3>
+              <p>Para gerenciamento financeiro completo</p>
+            </div>
+            <div class="pricing-body text-center">
+              <div class="pricing-price">R$19,90<small>/mês</small></div>
+              <ul class="list-unstyled">
+                <li class="mb-3"><i class="fas fa-check text-success mr-2"></i>Transações ilimitadas</li>
+                <li class="mb-3"><i class="fas fa-check text-success mr-2"></i>Dashboard completo</li>
+                <li class="mb-3"><i class="fas fa-check text-success mr-2"></i>Até 5 cartões de crédito</li>
+                <li class="mb-3"><i class="fas fa-check text-success mr-2"></i>Transações recorrentes</li>
+                <li class="mb-3"><i class="fas fa-check text-success mr-2"></i>Projeção de saldo futuro</li>
+              </ul>
+              <a href="{{ url_for('register') }}" class="btn btn-primary btn-block mt-4">Escolher Premium</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+          <div class="pricing-card">
+            <div class="pricing-header" style="background-color: #9b59b6;">
+              <h3>Familiar</h3>
+              <p>Para toda a família</p>
+            </div>
+            <div class="pricing-body text-center">
+              <div class="pricing-price">R$39,90<small>/mês</small></div>
+              <ul class="list-unstyled">
+                <li class="mb-3"><i class="fas fa-check text-success mr-2"></i>Tudo do Premium</li>
+                <li class="mb-3"><i class="fas fa-check text-success mr-2"></i>Até 5 usuários</li>
+                <li class="mb-3"><i class="fas fa-check text-success mr-2"></i>Cartões ilimitados</li>
+                <li class="mb-3"><i class="fas fa-check text-success mr-2"></i>Orçamentos compartilhados</li>
+                <li class="mb-3"><i class="fas fa-check text-success mr-2"></i>Suporte prioritário</li>
+              </ul>
+              <a href="{{ url_for('register') }}" class="btn btn-outline-primary btn-block mt-4">Escolher Familiar</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section id="faq" class="py-5 bg-light">
+    <div class="container py-5">
+      <div class="text-center mb-5">
+        <h2 class="font-weight-bold">Perguntas Frequentes</h2>
+        <p class="lead text-muted">Respostas para as dúvidas mais comuns</p>
+      </div>
+      <div class="row">
+        <div class="col-lg-6 mb-4">
+          <h5><i class="fas fa-question-circle text-primary mr-2"></i>É seguro cadastrar minhas informações financeiras?</h5>
+          <p>Sim! Utilizamos criptografia de ponta a ponta e seguimos os mais rigorosos padrões de segurança. Seus dados são protegidos e nunca são compartilhados com terceiros.</p>
+        </div>
+        <div class="col-lg-6 mb-4">
+          <h5><i class="fas fa-question-circle text-primary mr-2"></i>Preciso vincular minhas contas bancárias?</h5>
+          <p>Não! O Eletriom Finance não exige vinculação com bancos. Você insere suas transações manualmente ou importa via CSV, mantendo total controle sobre o que é cadastrado.</p>
+        </div>
+        <div class="col-lg-6 mb-4">
+          <h5><i class="fas fa-question-circle text-primary mr-2"></i>Posso cancelar minha assinatura a qualquer momento?</h5>
+          <p>Absolutamente! Não há contratos de fidelidade. Você pode cancelar quando quiser, sem multas ou cobranças adicionais.</p>
+        </div>
+        <div class="col-lg-6 mb-4">
+          <h5><i class="fas fa-question-circle text-primary mr-2"></i>Como funciona o período de teste?</h5>
+          <p>Oferecemos 14 dias de teste gratuito em todos os planos pagos. Durante este período, você tem acesso a todos os recursos premium sem custo e sem necessidade de cartão de crédito.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="container">
+      <h2 class="display-4 font-weight-bold mb-3">Comece hoje a transformar suas finanças</h2>
+      <p class="lead mb-4">Junte-se a milhares de pessoas que estão controlando melhor seu dinheiro e realizando seus sonhos.</p>
+      <a href="{{ url_for('register') }}" class="btn btn-cta">Criar Conta Grátis</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="landing-footer">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-4 mb-4 mb-lg-0">
+          <h4><i class="fas fa-bolt mr-2"></i>Eletriom Finance</h4>
+          <p>Sua plataforma completa para gerenciamento financeiro pessoal e familiar.</p>
+        </div>
+        <div class="col-lg-2 mb-4 mb-lg-0">
+          <h5>Empresa</h5>
+          <ul class="list-unstyled">
+            <li class="mb-2"><a href="#">Sobre nós</a></li>
+            <li class="mb-2"><a href="{{ url_for('privacy_policy') }}">Privacidade</a></li>
+            <li class="mb-2"><a href="{{ url_for('terms_of_use') }}">Termos de Uso</a></li>
+            <li class="mb-2"><a href="#">Contato</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-2 mb-4 mb-lg-0">
+          <h5>Recursos</h5>
+          <ul class="list-unstyled">
+            <li class="mb-2"><a href="#">Blog</a></li>
+            <li class="mb-2"><a href="#">Guias</a></li>
+            <li class="mb-2"><a href="#">Tutoriais</a></li>
+            <li class="mb-2"><a href="#">FAQ</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-4">
+          <h5>Inscreva-se na nossa newsletter</h5>
+          <p>Receba dicas de finanças e novidades do Eletriom Finance</p>
+          <form>
+            <div class="input-group mb-3">
+              <input type="email" class="form-control" placeholder="Seu email" aria-label="Email">
+              <div class="input-group-append">
+                <button class="btn btn-primary" type="button">Inscrever</button>
+              </div>
+            </div>
+          </form>
+          <div class="footer-links mt-3">
+            <a href="#"><i class="fab fa-facebook-f"></i></a>
+            <a href="#"><i class="fab fa-twitter"></i></a>
+            <a href="#"><i class="fab fa-instagram"></i></a>
+            <a href="#"><i class="fab fa-linkedin-in"></i></a>
+          </div>
+        </div>
+      </div>
+      <hr class="my-4 bg-light">
+      <div class="text-center">
+        <p class="mb-0">&copy; 2023 Eletriom Finance. Todos os direitos reservados.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="{{ url_for('static', filename='cookies.js') }}"></script>
+</body>
+</html> 
