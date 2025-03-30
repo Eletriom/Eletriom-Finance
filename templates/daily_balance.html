@@ -1,0 +1,403 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row mb-4">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-calendar-day mr-2"></i>Saldo Diário</h5>
+        <div class="d-flex">
+          <select id="filter-month" class="form-control mr-2">
+            <option value="todos">Todos os meses</option>
+            <option value="jan">Janeiro</option>
+            <option value="fev">Fevereiro</option>
+            <option value="mar">Março</option>
+            <option value="abr">Abril</option>
+            <option value="mai">Maio</option>
+            <option value="jun">Junho</option>
+            <option value="jul">Julho</option>
+            <option value="ago">Agosto</option>
+            <option value="set">Setembro</option>
+            <option value="out">Outubro</option>
+            <option value="nov">Novembro</option>
+            <option value="dez">Dezembro</option>
+          </select>
+          <select id="filter-year" class="form-control">
+            <!-- Será preenchido via JavaScript -->
+          </select>
+        </div>
+      </div>
+      <div class="card-body">
+        <div style="height: 300px;">
+          <canvas id="grafico-saldo-diario"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="fas fa-list-alt mr-2"></i>Histórico de Saldo Diário</h5>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Entradas</th>
+          <th>Saídas</th>
+          <th>Saldo do Dia</th>
+          <th>Saldo Acumulado</th>
+          <th>Detalhes</th>
+        </tr>
+      </thead>
+      <tbody id="daily-balance-table">
+        <!-- Será preenchido via JavaScript -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal de Detalhes do Dia -->
+<div class="modal fade" id="dayDetailsModal" tabindex="-1" role="dialog" aria-labelledby="dayDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="dayDetailsModalLabel"><i class="fas fa-calendar-day mr-2"></i>Detalhes do Dia</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <div class="card bg-success text-white">
+              <div class="card-body text-center">
+                <h6 class="card-title">Entradas</h6>
+                <h4 id="modal-income">R$ 0,00</h4>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card bg-danger text-white">
+              <div class="card-body text-center">
+                <h6 class="card-title">Saídas</h6>
+                <h4 id="modal-expense">R$ 0,00</h4>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card bg-primary text-white">
+              <div class="card-body text-center">
+                <h6 class="card-title">Saldo do Dia</h6>
+                <h4 id="modal-balance">R$ 0,00</h4>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <h6 class="mb-3"><i class="fas fa-list mr-2"></i>Transações do Dia</h6>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover">
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Descrição</th>
+                <th>Valor</th>
+                <th>Categoria</th>
+              </tr>
+            </thead>
+            <tbody id="modal-transactions">
+              <!-- Preenchido via JavaScript -->
+            </tbody>
+          </table>
+        </div>
+        
+        <div id="credit-card-section" class="mt-4">
+          <h6 class="mb-3"><i class="fas fa-credit-card mr-2"></i>Faturas de Cartão</h6>
+          <div class="table-responsive">
+            <table class="table table-sm table-hover">
+              <thead>
+                <tr>
+                  <th>Cartão</th>
+                  <th>Valor da Fatura</th>
+                  <th>Data de Vencimento</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="modal-credit-cards">
+                <!-- Preenchido via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Dados de saldo diário (serão preenchidos pelo backend)
+  const dailyBalanceData = {{ daily_balance_data|tojson }};
+  const creditCardData = {{ credit_card_data|tojson }};
+  
+  // Função para formatar valores monetários
+  function formatCurrency(value) {
+    return 'R$ ' + value.toFixed(2).replace('.', ',');
+  }
+  
+  // Função para preencher o seletor de anos
+  function populateYearSelector() {
+    const yearSelector = document.getElementById('filter-year');
+    const currentYear = new Date().getFullYear();
+    
+    // Adicionar os últimos 5 anos
+    for (let i = 0; i < 5; i++) {
+      const year = currentYear - i;
+      const option = document.createElement('option');
+      option.value = year;
+      option.textContent = year;
+      yearSelector.appendChild(option);
+    }
+  }
+  
+  // Função para filtrar dados por mês e ano
+  function filterData() {
+    const selectedMonth = document.getElementById('filter-month').value;
+    const selectedYear = document.getElementById('filter-year').value;
+    
+    let filteredData = dailyBalanceData;
+    
+    // Filtrar por mês e ano se não for "todos"
+    if (selectedMonth !== 'todos') {
+      filteredData = filteredData.filter(item => {
+        const dateParts = item.date.split('-');
+        const month = dateParts[1].toLowerCase();
+        return month === selectedMonth.toLowerCase();
+      });
+    }
+    
+    if (selectedYear !== 'todos') {
+      filteredData = filteredData.filter(item => {
+        const dateParts = item.date.split('-');
+        const year = dateParts[2];
+        return year === selectedYear;
+      });
+    }
+    
+    updateChart(filteredData);
+    updateTable(filteredData);
+  }
+  
+  // Função para atualizar o gráfico
+  function updateChart(data) {
+    const ctx = document.getElementById('grafico-saldo-diario').getContext('2d');
+    
+    // Extrair datas e saldos (invertendo a ordem para datas mais recentes à direita)
+    const dates = [...data.map(item => item.date)].reverse();
+    const balances = [...data.map(item => item.accumulated_balance)].reverse();
+    
+    // Destruir gráfico anterior se existir
+    if (window.balanceChart) {
+      window.balanceChart.destroy();
+    }
+    
+    // Criar novo gráfico
+    window.balanceChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: dates,
+        datasets: [{
+          label: 'Saldo Acumulado',
+          data: balances,
+          borderColor: '#3498db',
+          backgroundColor: 'rgba(52, 152, 219, 0.1)',
+          borderWidth: 2,
+          pointBackgroundColor: '#3498db',
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            grid: {
+              display: false
+            }
+          },
+          y: {
+            grid: {
+              color: 'rgba(0, 0, 0, 0.05)'
+            },
+            ticks: {
+              callback: function(value) {
+                return 'R$ ' + value.toFixed(2);
+              }
+            }
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return 'Saldo: ' + formatCurrency(context.raw);
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+  
+  // Função para atualizar a tabela
+  function updateTable(data) {
+    const tableBody = document.getElementById('daily-balance-table');
+    tableBody.innerHTML = '';
+    
+    data.forEach(item => {
+      const row = document.createElement('tr');
+      
+      // Adicionar classe para destacar dias com transações
+      if (item.income > 0 || item.expense > 0) {
+        row.classList.add('table-info');
+      }
+      
+      row.innerHTML = `
+        <td>${item.date}</td>
+        <td class="text-success">${formatCurrency(item.income)}</td>
+        <td class="text-danger">${formatCurrency(item.expense)}</td>
+        <td class="font-weight-bold ${item.daily_balance >= 0 ? 'text-success' : 'text-danger'}">
+          ${formatCurrency(item.daily_balance)}
+        </td>
+        <td class="font-weight-bold ${item.accumulated_balance >= 0 ? 'text-success' : 'text-danger'}">
+          ${formatCurrency(item.accumulated_balance)}
+        </td>
+        <td>
+          <button class="btn btn-sm btn-info btn-view-details" data-date="${item.date}">
+            <i class="fas fa-eye"></i>
+          </button>
+        </td>
+      `;
+      
+      tableBody.appendChild(row);
+    });
+    
+    // Adicionar event listeners para os botões de detalhes
+    document.querySelectorAll('.btn-view-details').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const date = this.getAttribute('data-date');
+        showDayDetails(date);
+      });
+    });
+  }
+  
+  // Função para mostrar detalhes do dia
+  function showDayDetails(date) {
+    // Encontrar os dados do dia selecionado
+    const dayData = dailyBalanceData.find(item => item.date === date);
+    
+    if (!dayData) return;
+    
+    // Atualizar título do modal
+    document.getElementById('dayDetailsModalLabel').innerHTML = 
+      `<i class="fas fa-calendar-day mr-2"></i>Detalhes do Dia ${date}`;
+    
+    // Atualizar resumo financeiro
+    document.getElementById('modal-income').textContent = formatCurrency(dayData.income);
+    document.getElementById('modal-expense').textContent = formatCurrency(dayData.expense);
+    document.getElementById('modal-balance').textContent = formatCurrency(dayData.daily_balance);
+    
+    // Limpar e preencher tabela de transações
+    const transactionsTable = document.getElementById('modal-transactions');
+    transactionsTable.innerHTML = '';
+    
+    if (dayData.transactions && dayData.transactions.length > 0) {
+      dayData.transactions.forEach(txn => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>
+            <span class="badge ${txn.trans_type === 'entrada' ? 'badge-success' : 'badge-danger'}">
+              ${txn.trans_type === 'entrada' ? 'Entrada' : 'Saída'}
+            </span>
+          </td>
+          <td>${txn.description}</td>
+          <td class="font-weight-bold ${txn.trans_type === 'entrada' ? 'text-success' : 'text-danger'}">
+            ${formatCurrency(txn.value)}
+          </td>
+          <td>${txn.category ? `<span class="badge badge-info">${txn.category}</span>` : '-'}</td>
+        `;
+        transactionsTable.appendChild(row);
+      });
+    } else {
+      transactionsTable.innerHTML = `
+        <tr>
+          <td colspan="4" class="text-center py-3">
+            <i class="fas fa-info-circle mr-2 text-info"></i>Não há transações neste dia.
+          </td>
+        </tr>
+      `;
+    }
+    
+    // Verificar se há faturas de cartão para este dia
+    const creditCardSection = document.getElementById('credit-card-section');
+    const creditCardsTable = document.getElementById('modal-credit-cards');
+    creditCardsTable.innerHTML = '';
+    
+    // Filtrar faturas que vencem neste dia
+    const cardInvoices = creditCardData.filter(card => {
+      return card.due_dates.some(dueDate => dueDate.date === date);
+    });
+    
+    if (cardInvoices.length > 0) {
+      creditCardSection.style.display = 'block';
+      
+      cardInvoices.forEach(card => {
+        // Encontrar a fatura específica para esta data
+        const invoice = card.due_dates.find(dueDate => dueDate.date === date);
+        
+        if (invoice) {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${card.name}</td>
+            <td class="font-weight-bold text-danger">${formatCurrency(invoice.amount)}</td>
+            <td>${date}</td>
+            <td>
+              <span class="badge ${invoice.paid ? 'badge-success' : 'badge-warning'}">
+                ${invoice.paid ? 'Pago' : 'Pendente'}
+              </span>
+            </td>
+          `;
+          creditCardsTable.appendChild(row);
+        }
+      });
+    } else {
+      creditCardSection.style.display = 'none';
+    }
+    
+    // Exibir o modal
+    $('#dayDetailsModal').modal('show');
+  }
+  
+  // Inicializar a página
+  document.addEventListener('DOMContentLoaded', function() {
+    populateYearSelector();
+    
+    // Configurar event listeners para filtros
+    document.getElementById('filter-month').addEventListener('change', filterData);
+    document.getElementById('filter-year').addEventListener('change', filterData);
+    
+    // Carregar dados iniciais
+    updateChart(dailyBalanceData);
+    updateTable(dailyBalanceData);
+  });
+</script>
+{% endblock %}

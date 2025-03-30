@@ -6,7 +6,17 @@
   </div>
   <div class="card-body">
     <div class="alert alert-info" role="alert">
-      <i class="fas fa-info-circle mr-2"></i>O arquivo CSV deve conter as colunas: data, valor, descricao, tipo (opcional), categoria (opcional)
+      <i class="fas fa-info-circle mr-2"></i>O arquivo CSV deve conter as seguintes colunas:
+      <ul class="mb-0 mt-2">
+        <li><strong>data</strong> - formato DD/MM/AAAA (obrigatório)</li>
+        <li><strong>valor</strong> - use ponto como separador decimal (obrigatório)</li>
+        <li><strong>descricao</strong> - descrição da transação (obrigatório)</li>
+        <li><strong>tipo</strong> - "entrada" ou "saida" (opcional, padrão: "entrada")</li>
+        <li><strong>categoria</strong> - categoria da transação (opcional)</li>
+      </ul>
+    </div>
+    <div class="alert alert-secondary" role="alert">
+      <i class="fas fa-download mr-2"></i>Baixe nosso <a href="{{ url_for('download_template') }}" class="alert-link">template CSV de exemplo</a> para facilitar sua importação.
     </div>
     <form method="POST" action="{{ url_for('upload_csv') }}" enctype="multipart/form-data">
       <div class="form-group">

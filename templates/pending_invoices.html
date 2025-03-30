@@ -1,0 +1,350 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row mb-4">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-credit-card mr-2"></i>Faturas Pendentes</h5>
+        <div class="d-flex">
+          <select id="filter-month" class="form-control mr-2">
+            <option value="todos">Todos os meses</option>
+            <option value="jan">Janeiro</option>
+            <option value="fev">Fevereiro</option>
+            <option value="mar">Março</option>
+            <option value="abr">Abril</option>
+            <option value="mai">Maio</option>
+            <option value="jun">Junho</option>
+            <option value="jul">Julho</option>
+            <option value="ago">Agosto</option>
+            <option value="set">Setembro</option>
+            <option value="out">Outubro</option>
+            <option value="nov">Novembro</option>
+            <option value="dez">Dezembro</option>
+          </select>
+          <select id="filter-year" class="form-control">
+            <!-- Será preenchido via JavaScript -->
+          </select>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <div class="card bg-primary text-white">
+              <div class="card-body text-center">
+                <h6 class="card-title">Saldo Atual</h6>
+                <h3 id="current-balance">R$ 0,00</h3>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card bg-info text-white">
+              <div class="card-body text-center">
+                <h6 class="card-title">Saldo Após Pagamentos</h6>
+                <h3 id="balance-after-payments">R$ 0,00</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <h5 class="mb-3"><i class="fas fa-list-alt mr-2"></i>Faturas Pendentes</h5>
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Data de Vencimento</th>
+                <th>Cartão</th>
+                <th>Valor</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="pending-invoices-table">
+              <!-- Será preenchido via JavaScript -->
+            </tbody>
+            <tfoot>
+              <tr class="table-info">
+                <th colspan="2">Total</th>
+                <th id="total-pending-amount">R$ 0,00</th>
+                <th colspan="2"></th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Detalhes da Fatura -->
+<div class="modal fade" id="invoiceDetailsModal" tabindex="-1" role="dialog" aria-labelledby="invoiceDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="invoiceDetailsModalLabel"><i class="fas fa-credit-card mr-2"></i>Detalhes da Fatura</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <div class="card bg-light">
+              <div class="card-body">
+                <h6 class="card-title">Cartão</h6>
+                <h5 id="modal-card-name">Nome do Cartão</h5>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card bg-danger text-white">
+              <div class="card-body text-center">
+                <h6 class="card-title">Valor da Fatura</h6>
+                <h4 id="modal-invoice-amount">R$ 0,00</h4>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <h6 class="mb-3"><i class="fas fa-list mr-2"></i>Transações da Fatura</h6>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Descrição</th>
+                <th>Valor</th>
+                <th>Categoria</th>
+              </tr>
+            </thead>
+            <tbody id="modal-invoice-transactions">
+              <!-- Preenchido via JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Dados de faturas pendentes (serão preenchidos pelo backend)
+  const pendingInvoicesData = {{ pending_invoices|tojson }};
+  const currentBalance = {{ current_balance|tojson }};
+  
+  // Função para formatar valores monetários
+  function formatCurrency(value) {
+    return 'R$ ' + value.toFixed(2).replace('.', ',');
+  }
+  
+  // Função para preencher o seletor de anos
+  function populateYearSelector() {
+    const yearSelector = document.getElementById('filter-year');
+    const currentYear = new Date().getFullYear();
+    
+    // Adicionar os últimos 5 anos
+    for (let i = 0; i < 5; i++) {
+      const year = currentYear - i;
+      const option = document.createElement('option');
+      option.value = year;
+      option.textContent = year;
+      yearSelector.appendChild(option);
+    }
+  }
+  
+  // Função para filtrar dados por mês e ano
+  function filterData() {
+    const selectedMonth = document.getElementById('filter-month').value;
+    const selectedYear = document.getElementById('filter-year').value;
+    
+    let filteredData = pendingInvoicesData;
+    
+    // Filtrar por mês e ano se não for "todos"
+    if (selectedMonth !== 'todos') {
+      filteredData = filteredData.filter(item => {
+        const dateParts = item.due_date.split('-');
+        const month = dateParts[1].toLowerCase();
+        return month === selectedMonth.toLowerCase();
+      });
+    }
+    
+    if (selectedYear !== 'todos') {
+      filteredData = filteredData.filter(item => {
+        const dateParts = item.due_date.split('-');
+        const year = dateParts[2];
+        return year === selectedYear;
+      });
+    }
+    
+    updateTable(filteredData);
+    updateBalanceAfterPayments(filteredData);
+  }
+  
+  // Função para atualizar a tabela de faturas pendentes
+  function updateTable(data) {
+    const tableBody = document.getElementById('pending-invoices-table');
+    tableBody.innerHTML = '';
+    
+    let totalAmount = 0;
+    
+    if (data.length > 0) {
+      // Agrupar faturas por data de vencimento
+      const invoicesByDate = {};
+      
+      data.forEach(invoice => {
+        if (!invoicesByDate[invoice.due_date]) {
+          invoicesByDate[invoice.due_date] = [];
+        }
+        invoicesByDate[invoice.due_date].push(invoice);
+        totalAmount += invoice.amount;
+      });
+      
+      // Ordenar datas de vencimento
+      const sortedDates = Object.keys(invoicesByDate).sort((a, b) => {
+        const dateA = new Date(a.split('-').reverse().join('-'));
+        const dateB = new Date(b.split('-').reverse().join('-'));
+        return dateA - dateB;
+      });
+      
+      // Adicionar faturas à tabela agrupadas por data
+      sortedDates.forEach(date => {
+        const invoices = invoicesByDate[date];
+        
+        // Adicionar cabeçalho da data
+        const dateRow = document.createElement('tr');
+        dateRow.classList.add('table-secondary');
+        dateRow.innerHTML = `
+          <td colspan="5" class="font-weight-bold">
+            <i class="fas fa-calendar-day mr-2"></i>${date}
+          </td>
+        `;
+        tableBody.appendChild(dateRow);
+        
+        // Adicionar faturas desta data
+        invoices.forEach(invoice => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td></td>
+            <td>${invoice.card_name}</td>
+            <td class="font-weight-bold text-danger">${formatCurrency(invoice.amount)}</td>
+            <td>
+              <span class="badge badge-warning">Pendente</span>
+            </td>
+            <td>
+              <button class="btn btn-sm btn-info btn-view-invoice" data-card-id="${invoice.card_id}" data-date="${invoice.due_date}">
+                <i class="fas fa-eye"></i>
+              </button>
+            </td>
+          `;
+          tableBody.appendChild(row);
+        });
+      });
+    } else {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="5" class="text-center py-3">
+            <i class="fas fa-info-circle mr-2 text-info"></i>Não há faturas pendentes no período selecionado.
+          </td>
+        </tr>
+      `;
+    }
+    
+    // Atualizar total
+    document.getElementById('total-pending-amount').textContent = formatCurrency(totalAmount);
+    
+    // Adicionar event listeners para os botões de detalhes
+    document.querySelectorAll('.btn-view-invoice').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const cardId = this.getAttribute('data-card-id');
+        const date = this.getAttribute('data-date');
+        showInvoiceDetails(cardId, date);
+      });
+    });
+  }
+  
+  // Função para atualizar o saldo após pagamentos
+  function updateBalanceAfterPayments(data) {
+    // Exibir saldo atual
+    document.getElementById('current-balance').textContent = formatCurrency(currentBalance);
+    
+    // Calcular total de faturas pendentes
+    const totalPending = data.reduce((sum, invoice) => sum + invoice.amount, 0);
+    
+    // Calcular saldo após pagamentos
+    const balanceAfter = currentBalance - totalPending;
+    document.getElementById('balance-after-payments').textContent = formatCurrency(balanceAfter);
+    
+    // Adicionar classe para destacar saldo negativo
+    const balanceElement = document.getElementById('balance-after-payments');
+    if (balanceAfter < 0) {
+      balanceElement.parentElement.classList.remove('bg-info');
+      balanceElement.parentElement.classList.add('bg-danger');
+    } else {
+      balanceElement.parentElement.classList.remove('bg-danger');
+      balanceElement.parentElement.classList.add('bg-info');
+    }
+  }
+  
+  // Função para mostrar detalhes da fatura
+  function showInvoiceDetails(cardId, date) {
+    // Encontrar a fatura específica
+    const invoice = pendingInvoicesData.find(inv => inv.card_id == cardId && inv.due_date === date);
+    
+    if (!invoice) return;
+    
+    // Atualizar título do modal
+    document.getElementById('invoiceDetailsModalLabel').innerHTML = 
+      `<i class="fas fa-credit-card mr-2"></i>Detalhes da Fatura - ${date}`;
+    
+    // Atualizar informações da fatura
+    document.getElementById('modal-card-name').textContent = invoice.card_name;
+    document.getElementById('modal-invoice-amount').textContent = formatCurrency(invoice.amount);
+    
+    // Limpar e preencher tabela de transações
+    const transactionsTable = document.getElementById('modal-invoice-transactions');
+    transactionsTable.innerHTML = '';
+    
+    if (invoice.transactions && invoice.transactions.length > 0) {
+      invoice.transactions.forEach(txn => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${txn.date}</td>
+          <td>${txn.description}</td>
+          <td class="font-weight-bold text-danger">${formatCurrency(txn.value)}</td>
+          <td>${txn.category ? `<span class="badge badge-info">${txn.category}</span>` : '-'}</td>
+        `;
+        transactionsTable.appendChild(row);
+      });
+    } else {
+      transactionsTable.innerHTML = `
+        <tr>
+          <td colspan="4" class="text-center py-3">
+            <i class="fas fa-info-circle mr-2 text-info"></i>Não há transações para esta fatura.
+          </td>
+        </tr>
+      `;
+    }
+    
+    // Exibir o modal
+    $('#invoiceDetailsModal').modal('show');
+  }
+  
+  // Inicializar a página
+  document.addEventListener('DOMContentLoaded', function() {
+    populateYearSelector();
+    
+    // Configurar event listeners para filtros
+    document.getElementById('filter-month').addEventListener('change', filterData);
+    document.getElementById('filter-year').addEventListener('change', filterData);
+    
+    // Carregar dados iniciais
+    updateTable(pendingInvoicesData);
+    updateBalanceAfterPayments(pendingInvoicesData);
+  });
+</script>
+{% endblock %}

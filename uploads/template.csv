@@ -1,0 +1,6 @@
+data,valor,descricao,tipo,categoria
+01/01/2023,1500.00,"Salário",entrada,"Renda"
+05/01/2023,89.90,"Internet",saida,"Serviços"
+10/01/2023,350.00,"Supermercado",saida,"Alimentação"
+15/01/2023,200.00,"Transferência recebida",entrada,"Outros"
+20/01/2023,120.00,"Conta de luz",saida,"Serviços"

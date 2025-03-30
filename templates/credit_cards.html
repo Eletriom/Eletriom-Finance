@@ -307,8 +307,12 @@
               }
               
               // Exibir total da fatura e data de vencimento
-              document.getElementById('view-card-invoice-total').textContent = 
-                (data.card.limit - data.card.available_limit).toFixed(2);
+              // Calcular o valor total da fatura somando as transações atuais
+              let invoiceTotal = 0;
+              if (data.transactions && data.transactions.length > 0) {
+                invoiceTotal = data.transactions.reduce((sum, txn) => sum + txn.value, 0);
+              }
+              document.getElementById('view-card-invoice-total').textContent = invoiceTotal.toFixed(2);
               document.getElementById('view-card-invoice-due-date').textContent = 
                 data.card.next_due_date;
               

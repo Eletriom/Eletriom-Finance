@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_file
 import os
 import csv
 import secrets
@@ -25,6 +25,7 @@ app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'seu_email@gmail.com'  # Altere para seu email
 app.config['MAIL_PASSWORD'] = 'sua_senha_de_app'  # Altere para sua senha de aplicativo
 app.config['MAIL_DEFAULT_SENDER'] = 'seu_email@gmail.com'  # Altere para seu email
+app.config['UPLOAD_FOLDER'] = os.path.join(basedir, 'uploads')
 
 db = SQLAlchemy(app)
 
@@ -145,6 +146,10 @@ def send_email(to, subject, template):
 def generate_token(email):
     serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
     return serializer.dumps(email, salt=app.config['SECURITY_PASSWORD_SALT'])
+
+# Função para verificar se o arquivo tem extensão permitida
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() == 'csv'
 
 # Função para confirmar token de redefinição de senha
 def confirm_token(token, expiration=3600):
@@ -512,7 +517,8 @@ def add_transaction():
             trans_type=trans_type.lower(), 
             category=category,
             is_recurring=is_recurring,
-            credit_card_id=card_id
+            credit_card_id=card_id,
+            user_id=current_user.id
         )
         
         # Se for recorrente, configurar os campos de recorrência
@@ -555,7 +561,8 @@ def add_transaction():
                     category=category,
                     is_recurring=True,
                     parent_id=new_txn.id,
-                    credit_card_id=card_id  # Adicionar o cartão de crédito às transações recorrentes
+                    credit_card_id=card_id,  # Adicionar o cartão de crédito às transações recorrentes
+                    user_id=current_user.id
                 )
                 db.session.add(recurring_txn)
         else:
@@ -616,7 +623,7 @@ def upload_csv():
                         continue
                     date_obj = parse_date(date_str)
                     txn = Transaction(date=date_obj, value=value, description=description,
-                                      trans_type=trans_type.lower(), category=category)
+                                      trans_type=trans_type.lower(), category=category, user_id=current_user.id)
                     db.session.add(txn)
                 db.session.commit()
             flash("Arquivo CSV importado com sucesso!", 'success')
@@ -789,6 +796,13 @@ def future_balance():
         'current_balance': current_balance,
         'projection': projection
     })
+
+# Rota para baixar o template CSV de exemplo
+@app.route('/download_template')
+@login_required
+def download_template():
+    template_path = os.path.join(app.config['UPLOAD_FOLDER'], 'template.csv')
+    return send_file(template_path, as_attachment=True, download_name='template_transacoes.csv')
 
 # Rota para exportar os dados em CSV (relatório)
 @app.route('/export')
@@ -1050,7 +1064,8 @@ def add_credit_card():
             name=name,
             limit=limit,
             due_day=due_day,
-            closing_day=closing_day
+            closing_day=closing_day,
+            user_id=current_user.id
         )
         
         db.session.add(new_card)
@@ -1194,7 +1209,277 @@ def delete_credit_card(card_id):
     
     return jsonify({'success': True, 'message': 'Cartão excluído com sucesso!'})
 
+# Rota para a página de saldo diário
+@app.route('/daily_balance')
+@login_required
+def daily_balance():
+    # Obter todas as transações ordenadas por data
+    transactions = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.date).all()
+    
+    # Obter todos os cartões de crédito
+    credit_cards = CreditCard.query.filter_by(user_id=current_user.id).all()
+    
+    # Dicionário para armazenar saldo por dia
+    daily_balances = {}
+    
+    # Calcular saldo acumulado e transações por dia
+    accumulated_balance = 0.0
+    
+    for txn in transactions:
+        date_str = txn.date.strftime("%d-%b-%Y")
+        
+        # Inicializar o registro do dia se não existir
+        if date_str not in daily_balances:
+            daily_balances[date_str] = {
+                'date': date_str,
+                'income': 0.0,
+                'expense': 0.0,
+                'daily_balance': 0.0,
+                'accumulated_balance': 0.0,
+                'transactions': []
+            }
+        
+        # Atualizar valores do dia
+        if txn.trans_type == 'entrada':
+            daily_balances[date_str]['income'] += txn.value
+            accumulated_balance += txn.value
+        elif txn.trans_type == 'saida':
+            daily_balances[date_str]['expense'] += txn.value
+            accumulated_balance -= txn.value
+        
+        # Calcular saldo do dia
+        daily_balances[date_str]['daily_balance'] = daily_balances[date_str]['income'] - daily_balances[date_str]['expense']
+        daily_balances[date_str]['accumulated_balance'] = accumulated_balance
+        
+        # Adicionar transação à lista do dia
+        daily_balances[date_str]['transactions'].append({
+            'id': txn.id,
+            'description': txn.description,
+            'value': txn.value,
+            'trans_type': txn.trans_type,
+            'category': txn.category
+        })
+    
+    # Processar informações de faturas de cartões de crédito
+    credit_card_data = []
+    
+    for card in credit_cards:
+        card_data = {
+            'id': card.id,
+            'name': card.name,
+            'due_dates': []
+        }
+        
+        # Calcular datas de vencimento e valores das faturas para os próximos 12 meses
+        today = datetime.now().date()
+        current_month = today.month
+        current_year = today.year
+        
+        for i in range(12):
+            # Calcular mês e ano do vencimento
+            due_month = (current_month + i) % 12
+            if due_month == 0:
+                due_month = 12
+            due_year = current_year + ((current_month + i - 1) // 12)
+            
+            # Ajustar para o último dia do mês se o dia de vencimento for maior
+            last_day_of_month = 31  # Simplificação, poderia ser mais preciso
+            if due_month in [4, 6, 9, 11]:
+                last_day_of_month = 30
+            elif due_month == 2:
+                # Verificar se é ano bissexto
+                if due_year % 4 == 0 and (due_year % 100 != 0 or due_year % 400 == 0):
+                    last_day_of_month = 29
+                else:
+                    last_day_of_month = 28
+            
+            due_day = min(card.due_day, last_day_of_month)
+            due_date = datetime(due_year, due_month, due_day).date()
+            
+            # Calcular mês de fechamento (mês anterior ao vencimento)
+            if due_month == 1:
+                closing_month = 12
+                closing_year = due_year - 1
+            else:
+                closing_month = due_month - 1
+                closing_year = due_year
+            
+            closing_day = min(card.closing_day, last_day_of_month)
+            closing_date = datetime(closing_year, closing_month, closing_day).date()
+            
+            # Calcular próxima data de fechamento
+            if due_month == 12:
+                next_closing_month = 1
+                next_closing_year = due_year + 1
+            else:
+                next_closing_month = due_month + 1
+                next_closing_year = due_year
+            
+            next_closing_day = min(card.closing_day, last_day_of_month)
+            next_closing_date = datetime(next_closing_year, next_closing_month, next_closing_day).date()
+            
+            # Buscar transações no período da fatura
+            invoice_transactions = Transaction.query.filter(
+                Transaction.credit_card_id == card.id,
+                Transaction.trans_type == 'saida',
+                Transaction.date > closing_date,
+                Transaction.date <= next_closing_date
+            ).all()
+            
+            # Calcular valor total da fatura (apenas parcelas do mês atual)
+            invoice_amount = sum(txn.value for txn in invoice_transactions if txn.date.month == due_date.month and txn.date.year == due_date.year)
+            
+            # Verificar se a fatura já foi paga (simplificação)
+            is_paid = due_date < today
+            
+            # Adicionar à lista de vencimentos se houver valor
+            if invoice_amount > 0:
+                card_data['due_dates'].append({
+                    'date': due_date.strftime("%d-%b-%Y"),
+                    'amount': invoice_amount,
+                    'paid': is_paid
+                })
+        
+        credit_card_data.append(card_data)
+    
+    # Converter para lista e filtrar apenas dias com transações
+    daily_balance_list = [balance for balance in daily_balances.values() if balance['income'] > 0 or balance['expense'] > 0]
+    
+    # Ordenar por data (mais recente primeiro)
+    daily_balance_list.sort(key=lambda x: datetime.strptime(x['date'], "%d-%b-%Y"), reverse=True)
+    
+    return render_template('daily_balance.html', 
+                           daily_balance_data=daily_balance_list,
+                           credit_card_data=credit_card_data)
+
+# Rota para exibir faturas pendentes e calcular saldo após pagamento
+@app.route('/pending_invoices')
+@login_required
+def pending_invoices():
+    # Obter todas as transações para calcular o saldo atual
+    transactions = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.date).all()
+    
+    # Calcular saldo atual
+    current_balance = 0.0
+    current_date = datetime.now().date()
+    
+    for txn in transactions:
+        if txn.date <= current_date:
+            if txn.trans_type == 'entrada':
+                current_balance += txn.value
+            elif txn.trans_type == 'saida':
+                current_balance -= txn.value
+    
+    # Obter todos os cartões de crédito
+    credit_cards = CreditCard.query.filter_by(user_id=current_user.id).all()
+    
+    # Lista para armazenar faturas pendentes
+    pending_invoices = []
+    
+    for card in credit_cards:
+        # Calcular datas de vencimento e valores das faturas para os próximos 6 meses
+        today = datetime.now().date()
+        current_month = today.month
+        current_year = today.year
+        
+        for i in range(6):
+            # Calcular mês e ano do vencimento
+            due_month = (current_month + i) % 12
+            if due_month == 0:
+                due_month = 12
+            due_year = current_year + ((current_month + i - 1) // 12)
+            
+            # Ajustar para o último dia do mês se o dia de vencimento for maior
+            last_day_of_month = 31  # Simplificação, poderia ser mais preciso
+            if due_month in [4, 6, 9, 11]:
+                last_day_of_month = 30
+            elif due_month == 2:
+                # Verificar se é ano bissexto
+                if due_year % 4 == 0 and (due_year % 100 != 0 or due_year % 400 == 0):
+                    last_day_of_month = 29
+                else:
+                    last_day_of_month = 28
+            
+            due_day = min(card.due_day, last_day_of_month)
+            due_date = datetime(due_year, due_month, due_day).date()
+            
+            # Calcular mês de fechamento (mês anterior ao vencimento)
+            if due_month == 1:
+                closing_month = 12
+                closing_year = due_year - 1
+            else:
+                closing_month = due_month - 1
+                closing_year = due_year
+            
+            closing_day = min(card.closing_day, last_day_of_month)
+            closing_date = datetime(closing_year, closing_month, closing_day).date()
+            
+            # Calcular próxima data de fechamento
+            if due_month == 12:
+                next_closing_month = 1
+                next_closing_year = due_year + 1
+            else:
+                next_closing_month = due_month + 1
+                next_closing_year = due_year
+            
+            next_closing_day = min(card.closing_day, last_day_of_month)
+            next_closing_date = datetime(next_closing_year, next_closing_month, next_closing_day).date()
+            
+            # Buscar transações no período da fatura
+            invoice_transactions = Transaction.query.filter(
+                Transaction.credit_card_id == card.id,
+                Transaction.trans_type == 'saida',
+                Transaction.date > closing_date,
+                Transaction.date <= next_closing_date
+            ).all()
+            
+            # Calcular valor total da fatura
+            # Para transações recorrentes, considerar apenas se o mês/ano da transação corresponde ao mês/ano da fatura
+            # Para transações não recorrentes, considerar todas dentro do período de fechamento
+            invoice_amount = 0
+            filtered_transactions = []
+            for txn in invoice_transactions:
+                if txn.is_recurring:
+                    # Se for recorrente, só incluir se o mês/ano da transação corresponder ao mês/ano do vencimento
+                    if txn.date.month == due_month and txn.date.year == due_year:
+                        invoice_amount += txn.value
+                        filtered_transactions.append(txn)
+                else:
+                    # Se não for recorrente, incluir se estiver dentro do período de fechamento
+                    invoice_amount += txn.value
+                    filtered_transactions.append(txn)
+            
+            # Atualizar a lista de transações para exibição
+            invoice_transactions = filtered_transactions
+            
+            # Verificar se a fatura já foi paga (simplificação)
+            is_paid = due_date < today
+            
+            # Adicionar à lista de faturas pendentes se não estiver paga e tiver valor
+            if not is_paid and invoice_amount > 0:
+                # Formatar transações para exibição
+                formatted_transactions = []
+                for txn in invoice_transactions:
+                    formatted_transactions.append({
+                        'date': txn.date.strftime("%d-%b-%Y"),
+                        'description': txn.description,
+                        'value': txn.value,
+                        'category': txn.category
+                    })
+                
+                pending_invoices.append({
+                    'card_id': card.id,
+                    'card_name': card.name,
+                    'due_date': due_date.strftime("%d-%b-%Y"),
+                    'amount': invoice_amount,
+                    'transactions': formatted_transactions
+                })
+    
+    return render_template('pending_invoices.html', 
+                           pending_invoices=pending_invoices,
+                           current_balance=current_balance)
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()  # Cria as tabelas se não existirem.
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=26603, debug=True)
