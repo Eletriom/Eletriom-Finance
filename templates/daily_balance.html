@@ -263,6 +263,29 @@
     })];
     const balances = [...filteredData.map(item => item.accumulated_balance)];
     
+    // Preparar cores com base nos valores
+    let positiveColor = '#3498db';  // Azul para valores positivos
+    let negativeColor = '#e74c3c';  // Vermelho para valores negativos
+    let positiveColorArea = 'rgba(52, 152, 219, 0.1)';
+    let negativeColorArea = 'rgba(231, 76, 60, 0.1)';
+    
+    // Preparar arrays para cores
+    let borderColors = [];
+    let backgroundColors = [];
+    let pointColors = [];
+    
+    balances.forEach(value => {
+      if (value < 0) {
+        borderColors.push(negativeColor);
+        backgroundColors.push(negativeColorArea);
+        pointColors.push(negativeColor);
+      } else {
+        borderColors.push(positiveColor);
+        backgroundColors.push(positiveColorArea);
+        pointColors.push(positiveColor);
+      }
+    });
+    
     // Destruir gráfico anterior se existir
     if (window.balanceChart) {
       window.balanceChart.destroy();
@@ -276,10 +299,10 @@
         datasets: [{
           label: 'Saldo Acumulado',
           data: balances,
-          borderColor: '#3498db',
-          backgroundColor: 'rgba(52, 152, 219, 0.1)',
+          borderColor: borderColors,
+          backgroundColor: backgroundColors,
           borderWidth: 2,
-          pointBackgroundColor: '#3498db',
+          pointBackgroundColor: pointColors,
           pointRadius: 4,
           pointHoverRadius: 6,
           fill: true
@@ -312,6 +335,9 @@
                 return 'Saldo: ' + formatCurrency(context.raw);
               }
             }
+          },
+          legend: {
+            display: false // Ocultar a legenda
           }
         }
       }
