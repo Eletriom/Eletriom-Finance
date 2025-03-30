@@ -4,21 +4,21 @@
   <div class="col-md-6 col-lg-4 mb-4">
     <div class="dashboard-card balance-card">
       <h4><i class="fas fa-wallet mr-2"></i>Saldo Atual</h4>
-      <h2 class="mb-0">R$ {{ current_balance | round(2) }}</h2>
+      <h2 class="mb-0">R$ {{ current_balance|default_if_none|default_if_none| safe_round(2) }}</h2>
       <p class="text-muted small mb-0"><i class="fas fa-info-circle mr-1"></i>Considera apenas transações até hoje</p>
     </div>
   </div>
   <div class="col-md-6 col-lg-4 mb-4">
     <div class="dashboard-card">
       <h4><i class="fas fa-arrow-up text-success mr-2"></i>Total Entradas</h4>
-      <h2 class="mb-0 text-success">R$ {{ current_month_income | round(2) }}</h2>
+      <h2 class="mb-0 text-success">R$ {{ current_month_income|default_if_none| safe_round(2) }}</h2>
       <p class="text-muted small mb-0"><i class="fas fa-calendar-alt mr-1"></i>Mês atual</p>
     </div>
   </div>
   <div class="col-md-6 col-lg-4 mb-4">
     <div class="dashboard-card">
       <h4><i class="fas fa-arrow-down text-danger mr-2"></i>Total Saídas</h4>
-      <h2 class="mb-0 text-danger">R$ {{ current_month_expenses | round(2) }}</h2>
+      <h2 class="mb-0 text-danger">R$ {{ current_month_expenses|default_if_none| safe_round(2) }}</h2>
       <p class="text-muted small mb-0"><i class="fas fa-calendar-alt mr-1"></i>Mês atual</p>
     </div>
   </div>
@@ -84,11 +84,21 @@
             {% endif %}
           </td>
           <td class="font-weight-bold {% if txn.trans_type == 'entrada' %}text-success{% else %}text-danger{% endif %}">
-            R$ {{ txn.value | round(2) }}
+            R$ {{ txn.value | safe_round(2) }}
           </td>
           <td>{{ txn.description }}</td>
-          <td>{% if txn.category %}<span class="badge badge-info">{{ txn.category }}</span>{% endif %}</td>
-          <td class="font-weight-bold">R$ {{ txn.balance | round(2) }}</td>
+          <td>
+            {% if txn.category_id %}
+              {% set cat = namespace(name='') %}
+              {% for c in categories %}
+                {% if c.id == txn.category_id %}
+                  {% set cat.name = c.name %}
+                {% endif %}
+              {% endfor %}
+              <span class="badge badge-info">{{ cat.name|default_if_none }}</span>
+            {% endif %}
+          </td>
+          <td class="font-weight-bold">R$ {{ txn.balance | safe_round(2) }}</td>
           <td>
             <button class="btn btn-sm btn-primary btn-edit" data-id="{{ loop.index0 }}"><i class="fas fa-edit"></i></button>
             <button class="btn btn-sm btn-danger btn-delete" data-id="{{ loop.index0 }}"><i class="fas fa-trash"></i></button>
@@ -228,9 +238,7 @@
 </div>
 
 <!-- Elemento para armazenar dados das transações em formato JSON -->
-<script id="transactions-data" type="application/json">
-  {{ transactions | tojson }}
-</script>
+<script id="transactions-data" type="application/json">{% if transactions_json is defined %}{{ transactions_json|safe }}{% else %}[]{% endif %}</script>
 
 <script>
   document.querySelectorAll('.btn-edit').forEach(button => {

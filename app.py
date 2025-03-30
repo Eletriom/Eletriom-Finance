@@ -12,6 +12,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from functools import wraps
+import json
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'sua_chave_secreta_aqui'
@@ -28,6 +29,23 @@ app.config['MAIL_DEFAULT_SENDER'] = 'seu_email@gmail.com'  # Altere para seu ema
 app.config['UPLOAD_FOLDER'] = os.path.join(basedir, 'uploads')
 
 db = SQLAlchemy(app)
+
+# Adiciona filtro personalizado para arredondamento seguro
+@app.template_filter('safe_round')
+def safe_round_filter(value, precision=0):
+    if value is None:
+        return 0
+    try:
+        return round(float(value), precision)
+    except (ValueError, TypeError):
+        return 0
+
+# Adiciona filtro personalizado para valores nulos
+@app.template_filter('default_if_none')
+def default_if_none_filter(value, default=''):
+    if value is None:
+        return default
+    return value
 
 # Configuração do Flask-Login
 login_manager = LoginManager()
@@ -387,6 +405,10 @@ def index():
     current_month_income = 0.0
     current_month_expenses = 0.0
     
+    # Criar um conjunto para rastrear IDs de transações recorrentes já processadas no mês atual
+    # Isso evita a duplicação de transações recorrentes no gráfico
+    processed_recurring_parents = set()
+    
     # Primeiro, calcular o saldo atual (considerando apenas transações até a data atual)
     current_balance = 0.0
     for txn in transactions:
@@ -420,12 +442,18 @@ def index():
             'description': txn.description,
             'trans_type': txn.trans_type,
             'category': txn.category,
-            'balance': running_balance
+            'balance': running_balance,
+            'is_recurring': txn.is_recurring,
+            'parent_id': txn.parent_id
         })
+    
+    # Garantir que o JSON seja formatado corretamente sem espaços ou quebras de linha extras
+    transactions_json = json.dumps(txn_list, separators=(',', ':'))
+    
     return render_template('index.html', transactions=txn_list, total_balance=running_balance, 
                            current_balance=current_balance,
                            current_month_income=current_month_income, current_month_expenses=current_month_expenses,
-                           credit_cards=credit_cards)
+                           credit_cards=credit_cards, transactions_json=transactions_json)
 
 # Função para gerar datas recorrentes
 def generate_recurring_dates(start_date, recurrence_type, end_date=None, count=None):

@@ -1,5 +1,27 @@
 // Função para obter dados de gastos por categoria
 function getDadosGastosPorCategoria(transactions, mes) {
+    // Depurar transações recebidas
+    console.log("Todas as transações:", transactions);
+    
+    // Obter mapeamento de meses em diferentes formatos
+    const monthMap = {
+        'jan': 'jan', 'january': 'jan', 'enero': 'jan', '01': 'jan', '1': 'jan', 'janeiro': 'jan',
+        'feb': 'fev', 'february': 'fev', 'febrero': 'fev', '02': 'fev', '2': 'fev', 'fevereiro': 'fev',
+        'mar': 'mar', 'march': 'mar', 'marzo': 'mar', '03': 'mar', '3': 'mar', 'março': 'mar',
+        'apr': 'abr', 'april': 'abr', 'abril': 'abr', '04': 'abr', '4': 'abr',
+        'may': 'mai', 'mayo': 'mai', '05': 'mai', '5': 'mai', 'maio': 'mai',
+        'jun': 'jun', 'june': 'jun', 'junio': 'jun', '06': 'jun', '6': 'jun', 'junho': 'jun',
+        'jul': 'jul', 'july': 'jul', 'julio': 'jul', '07': 'jul', '7': 'jul', 'julho': 'jul',
+        'aug': 'ago', 'august': 'ago', 'agosto': 'ago', '08': 'ago', '8': 'ago',
+        'sep': 'set', 'september': 'set', 'septiembre': 'set', '09': 'set', '9': 'set', 'setembro': 'set',
+        'oct': 'out', 'october': 'out', 'octubre': 'out', '10': 'out', 'outubro': 'out',
+        'nov': 'nov', 'november': 'nov', 'noviembre': 'nov', '11': 'nov', 'novembro': 'nov',
+        'dec': 'dez', 'december': 'dez', 'diciembre': 'dez', '12': 'dez', 'dezembro': 'dez'
+    };
+    
+    // Mapa para controlar transações recorrentes já processadas
+    const processedRecurringIds = new Set();
+    
     // Filtrar transações por mês e tipo 'saida'
     const transacoesFiltradas = transactions.filter(txn => {
         if (!txn || !txn.date || !txn.trans_type) return false;
@@ -7,74 +29,55 @@ function getDadosGastosPorCategoria(transactions, mes) {
         // Verificar se é uma transação de saída
         if (txn.trans_type !== 'saida') return false;
         
-        // Se for "todos os meses", incluir todas as saídas
-        if (mes === 'todos') return true;
-        
-        // Extrair mês da data (formato: DD-MMM-YYYY)
+        // Extrair e normalizar mês da data
         const dataParts = txn.date.split('-');
         if (dataParts.length < 3) return false;
         
+        // Se for "todos os meses", incluir todas as saídas (mas evitando duplicatas de recorrências)
+        if (mes === 'todos') {
+            // Para transações recorrentes, evitar contar várias vezes
+            if (txn.is_recurring && txn.parent_id) {
+                if (processedRecurringIds.has(txn.parent_id)) {
+                    return false; // Já processamos outra ocorrência desta série
+                }
+                processedRecurringIds.add(txn.parent_id);
+            }
+            return true;
+        }
+        
+        // Detalhes da análise da data
+        console.log(`Analisando transação: ${txn.description}, data: ${txn.date}`);
+        
+        // Normalizar o mês da transação para comparação
         const mesTxn = dataParts[1].toLowerCase();
+        let mesComparar = monthMap[mesTxn] || mesTxn;
         
-        // Mapear abreviações de mês em inglês para português
-        const monthMap = {
-            'jan': 'jan',
-            'feb': 'fev',
-            'mar': 'mar',
-            'apr': 'abr',
-            'may': 'mai',
-            'jun': 'jun',
-            'jul': 'jul',
-            'aug': 'ago',
-            'sep': 'set',
-            'oct': 'out',
-            'nov': 'nov',
-            'dec': 'dez'
-        };
+        // Verificar se o mês da transação é igual ao mês selecionado
+        const isMatchingMonth = mesComparar === mes.toLowerCase();
         
-        // Converter mês da transação para o formato português
-        let mesComparar = mesTxn;
-        if (monthMap[mesComparar]) {
-            mesComparar = monthMap[mesComparar];
+        console.log(`Mês da transação: ${mesTxn}, Mês normalizado: ${mesComparar}, Mês selecionado: ${mes}, Match: ${isMatchingMonth}`);
+        
+        if (isMatchingMonth) {
+            // Para transações recorrentes, verificar se já processamos outra do mesmo grupo
+            if (txn.is_recurring && txn.parent_id) {
+                if (processedRecurringIds.has(txn.parent_id)) {
+                    console.log(`Transação recorrente já processada: ${txn.description}`);
+                    return false; // Já processamos outra ocorrência desta série
+                }
+                processedRecurringIds.add(txn.parent_id);
+            }
         }
         
-        // Comparar se o mês da transação é igual ao mês selecionado
-        return mesComparar === mes.toLowerCase();
+        return isMatchingMonth;
     });
     
-    // Criar um Map para rastrear IDs de transações já processadas
-    // Usamos Map em vez de Set para poder guardar o ID do pai das recorrências
-    const processedTransactions = new Map();
-    
-    // Primeiro passo: identificar transações recorrentes do mesmo grupo
-    transacoesFiltradas.forEach(txn => {
-        if (txn.parent_id) {
-            // Se for uma transação filha (recorrente), rastrear sob o ID do pai
-            processedTransactions.set(txn.id, txn.parent_id);
-        }
-    });
+    // Depurar transações filtradas
+    console.log(`Transações filtradas para o mês ${mes}:`, transacoesFiltradas);
     
     // Agrupar por categoria
     const gastosPorCategoria = {};
     
     transacoesFiltradas.forEach(txn => {
-        // Evitar transações duplicadas verificando o ID
-        if (processedTransactions.has(txn.id) && !txn.parent_id) {
-            // Se já processamos esta transação e não é uma filha, pular
-            return;
-        }
-        
-        // Para transações com parent_id, verificar se já processamos o pai ou outro irmão
-        if (txn.parent_id && Array.from(processedTransactions.values()).includes(txn.parent_id)) {
-            // Se já processamos outra recorrência do mesmo grupo, pular
-            return;
-        }
-        
-        // Adicionar ID à lista de transações processadas
-        if (!processedTransactions.has(txn.id)) {
-            processedTransactions.set(txn.id, txn.id);
-        }
-        
         const categoria = txn.category || 'Sem categoria';
         if (!gastosPorCategoria[categoria]) {
             gastosPorCategoria[categoria] = 0;
@@ -83,9 +86,13 @@ function getDadosGastosPorCategoria(transactions, mes) {
         // Garantir que o valor seja um número antes de somar
         const valor = parseFloat(txn.value);
         if (!isNaN(valor)) {
+            console.log(`Adicionando ${valor} à categoria ${categoria} para ${txn.description}`);
             gastosPorCategoria[categoria] += valor;
         }
     });
+    
+    // Depurar categorias e valores
+    console.log(`Gastos por categoria para o mês ${mes}:`, gastosPorCategoria);
     
     // Converter para arrays para Chart.js
     const categorias = Object.keys(gastosPorCategoria);
@@ -108,7 +115,49 @@ function atualizarGrafico(transactions) {
         mesSelecionado = meses[hoje.getMonth()];
     }
     
+    console.log("Mês selecionado:", mesSelecionado);
+    
     const dados = getDadosGastosPorCategoria(transactions, mesSelecionado);
+    
+    // Verificar se há dados
+    if (dados.categorias.length === 0) {
+        console.log(`Nenhum gasto encontrado para o mês ${mesSelecionado}`);
+        if (window.graficoGastos) {
+            window.graficoGastos.destroy();
+        }
+        
+        // Criar gráfico vazio ou mostrar mensagem
+        const ctx = document.getElementById('grafico-gastos').getContext('2d');
+        const config = {
+            type: 'pie',
+            data: {
+                labels: ['Sem dados'],
+                datasets: [{
+                    data: [1],
+                    backgroundColor: ['#f0f0f0'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                legend: {
+                    display: false
+                },
+                tooltips: {
+                    enabled: false
+                },
+                title: {
+                    display: true,
+                    text: `Distribuição de Gastos por Categoria - Sem gastos no mês de ${mesSelecionado}`,
+                    fontSize: 16
+                }
+            }
+        };
+        
+        window.graficoGastos = new Chart(ctx, config);
+        return;
+    }
     
     // Cores para o gráfico
     const cores = [
@@ -341,45 +390,58 @@ document.addEventListener('DOMContentLoaded', function() {
         // Obter dados das transações do elemento data
         const transactionsData = document.getElementById('transactions-data');
         if (transactionsData) {
-            const transactions = JSON.parse(transactionsData.textContent);
-            
-            // Definir o mês atual como padrão no seletor
-            const mesAtual = getMesAtual();
-            const seletorMes = document.getElementById('seletor-mes');
-            seletorMes.value = mesAtual;
-            
-            // Inicializar o gráfico com o mês atual
-            atualizarGrafico(transactions);
-            
-            // Adicionar evento de mudança ao seletor de mês
-            seletorMes.addEventListener('change', function() {
+            try {
+                // Depurar o conteúdo do JSON
+                const content = transactionsData.textContent;
+                if (!content || content.trim() === '') {
+                    console.error('Conteúdo de transactions-data está vazio');
+                    return;
+                }
+                
+                // Tentar analisar o JSON
+                const transactions = JSON.parse(content);
+                
+                // Definir o mês atual como padrão no seletor
+                const mesAtual = getMesAtual();
+                const seletorMes = document.getElementById('seletor-mes');
+                seletorMes.value = mesAtual;
+                
+                // Inicializar o gráfico com o mês atual
                 atualizarGrafico(transactions);
-            });
-            
-            // Adicionar eventos para os botões de edição
-            document.querySelectorAll('.btn-edit').forEach(button => {
-                button.addEventListener('click', function() {
-                    const transactionIndex = this.getAttribute('data-id');
-                    loadTransactionForEdit(transactionIndex);
+                
+                // Adicionar evento de mudança ao seletor de mês
+                seletorMes.addEventListener('change', function() {
+                    atualizarGrafico(transactions);
                 });
-            });
-            
-            // Adicionar eventos para os botões de exclusão
-            document.querySelectorAll('.btn-delete').forEach(button => {
-                button.addEventListener('click', function() {
-                    const transactionIndex = this.getAttribute('data-id');
-                    confirmDeleteTransaction(transactionIndex);
+                
+                // Adicionar eventos para os botões de edição
+                document.querySelectorAll('.btn-edit').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const transactionIndex = this.getAttribute('data-id');
+                        loadTransactionForEdit(transactionIndex);
+                    });
                 });
-            });
-            
-            // Adicionar evento para o botão de salvar edição
-            document.getElementById('btn-save-edit').addEventListener('click', saveTransactionEdit);
-            
-            // Adicionar evento para o botão de confirmar exclusão
-            document.getElementById('btn-confirm-delete').addEventListener('click', deleteTransaction);
-            
-            // Adicionar evento para o botão de projeção de saldo futuro
-            document.getElementById('btn-future-balance').addEventListener('click', loadFutureBalance);
+                
+                // Adicionar eventos para os botões de exclusão
+                document.querySelectorAll('.btn-delete').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const transactionIndex = this.getAttribute('data-id');
+                        confirmDeleteTransaction(transactionIndex);
+                    });
+                });
+                
+                // Adicionar evento para o botão de salvar edição
+                document.getElementById('btn-save-edit').addEventListener('click', saveTransactionEdit);
+                
+                // Adicionar evento para o botão de confirmar exclusão
+                document.getElementById('btn-confirm-delete').addEventListener('click', deleteTransaction);
+                
+                // Adicionar evento para o botão de projeção de saldo futuro
+                document.getElementById('btn-future-balance').addEventListener('click', loadFutureBalance);
+            } catch (error) {
+                console.error('Erro ao processar dados de transações:', error);
+                console.log('Conteúdo que causou erro:', transactionsData.textContent);
+            }
         }
     }
 });
