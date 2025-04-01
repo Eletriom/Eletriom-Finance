@@ -848,7 +848,7 @@ def download_template():
 @app.route('/export')
 @login_required
 def export_csv():
-    transactions = Transaction.query.order_by(Transaction.date).all()
+    transactions = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.date).all()
     from io import StringIO
     si = StringIO()
     writer = csv.writer(si)
