@@ -1,0 +1,195 @@
+{% extends "admin/base_admin.html" %}
+
+{% block content %}
+<div class="container-fluid">
+  <h1 class="mb-4"><i class="fas fa-chart-bar mr-2"></i>Estatísticas do Sistema</h1>
+  
+  <div class="row">
+    <!-- Estatísticas gerais -->
+    <div class="col-md-3">
+      <div class="card admin-card bg-primary text-white">
+        <div class="card-body admin-stat">
+          <i class="fas fa-users"></i>
+          <div class="stat-value">{{ total_users }}</div>
+          <div class="stat-label">Total de Usuários</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-3">
+      <div class="card admin-card bg-success text-white">
+        <div class="card-body admin-stat">
+          <i class="fas fa-user-plus"></i>
+          <div class="stat-value">{{ users_last_30_days }}</div>
+          <div class="stat-label">Novos Usuários (30 dias)</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-3">
+      <div class="card admin-card bg-info text-white">
+        <div class="card-body admin-stat">
+          <i class="fas fa-exchange-alt"></i>
+          <div class="stat-value">{{ total_transactions }}</div>
+          <div class="stat-label">Total de Transações</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-3">
+      <div class="card admin-card bg-warning text-white">
+        <div class="card-body admin-stat">
+          <i class="fas fa-calendar-alt"></i>
+          <div class="stat-value">{{ transactions_last_30_days }}</div>
+          <div class="stat-label">Transações (30 dias)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="row mt-4">
+    <!-- Gráfico de transações por mês -->
+    <div class="col-md-8">
+      <div class="card admin-card">
+        <div class="card-header bg-light">
+          <i class="fas fa-chart-line mr-2"></i>Transações por Mês
+        </div>
+        <div class="card-body">
+          <canvas id="transactionsChart" height="300"></canvas>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Resumo financeiro -->
+    <div class="col-md-4">
+      <div class="card admin-card">
+        <div class="card-header bg-light">
+          <i class="fas fa-money-bill-wave mr-2"></i>Resumo Financeiro
+        </div>
+        <div class="card-body">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Total de Entradas
+              <span class="text-success">R$ {{ total_income | safe_round(2) }}</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Total de Saídas
+              <span class="text-danger">R$ {{ total_expense | safe_round(2) }}</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Saldo Geral
+              <span class="{% if (total_income - total_expense) >= 0 %}text-success{% else %}text-danger{% endif %}">
+                R$ {{ (total_income - total_expense) | safe_round(2) }}
+              </span>
+            </li>
+          </ul>
+          
+          <div class="mt-4">
+            <canvas id="balanceChart" height="200"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="row mt-4">
+    <!-- Tabela de dados mensais -->
+    <div class="col-md-12">
+      <div class="card admin-card">
+        <div class="card-header bg-light">
+          <i class="fas fa-table mr-2"></i>Dados Mensais (Últimos 6 Meses)
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover admin-table">
+              <thead>
+                <tr>
+                  <th>Mês</th>
+                  <th>Transações</th>
+                  <th>Entradas</th>
+                  <th>Saídas</th>
+                  <th>Saldo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for month in months_data %}
+                <tr>
+                  <td>{{ month.month }}</td>
+                  <td>{{ month.transactions }}</td>
+                  <td class="text-success">R$ {{ month.income | safe_round(2) }}</td>
+                  <td class="text-danger">R$ {{ month.expense | safe_round(2) }}</td>
+                  <td class="{% if (month.income - month.expense) >= 0 %}text-success{% else %}text-danger{% endif %}">
+                    R$ {{ (month.income - month.expense) | safe_round(2) }}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Dados para os gráficos
+  const monthsData = {{ months_json|safe }};
+  
+  // Preparar dados para o gráfico de transações
+  const months = monthsData.map(item => item.month);
+  const transactionCounts = monthsData.map(item => item.transactions);
+  const incomeData = monthsData.map(item => item.income);
+  const expenseData = monthsData.map(item => item.expense);
+  
+  // Gráfico de transações por mês
+  const transactionsCtx = document.getElementById('transactionsChart').getContext('2d');
+  new Chart(transactionsCtx, {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [{
+        label: 'Número de Transações',
+        data: transactionCounts,
+        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+  
+  // Gráfico de entradas e saídas
+  const balanceCtx = document.getElementById('balanceChart').getContext('2d');
+  new Chart(balanceCtx, {
+    type: 'pie',
+    data: {
+      labels: ['Entradas', 'Saídas'],
+      datasets: [{
+        data: [{{ total_income }}, {{ total_expense }}],
+        backgroundColor: [
+          'rgba(75, 192, 192, 0.7)',
+          'rgba(255, 99, 132, 0.7)'
+        ],
+        borderColor: [
+          'rgba(75, 192, 192, 1)',
+          'rgba(255, 99, 132, 1)'
+        ],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true
+    }
+  });
+</script>
+{% endblock %}

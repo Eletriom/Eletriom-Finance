@@ -1,0 +1,127 @@
+{% extends "admin/base_admin.html" %}
+
+{% block content %}
+<div class="container-fluid">
+  <h1 class="mb-4"><i class="fas fa-database mr-2"></i>Gerenciamento do Banco de Dados</h1>
+  
+  <div class="row">
+    <!-- Informações do banco de dados -->
+    <div class="col-md-6">
+      <div class="card admin-card">
+        <div class="card-header bg-light">
+          <i class="fas fa-info-circle mr-2"></i>Informações do Banco de Dados
+        </div>
+        <div class="card-body">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Tamanho do Banco de Dados
+              <span class="badge badge-primary badge-pill">{{ db_size_mb | safe_round(2) }} MB</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Número de Tabelas
+              <span class="badge badge-info badge-pill">{{ tables_info|length }}</span>
+            </li>
+          </ul>
+          
+          <div class="mt-4">
+            <form action="{{ url_for('admin.backup_database') }}" method="POST" class="d-inline">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-download mr-1"></i> Criar Backup
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Estatísticas das tabelas -->
+    <div class="col-md-6">
+      <div class="card admin-card">
+        <div class="card-header bg-light">
+          <i class="fas fa-table mr-2"></i>Estatísticas das Tabelas
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover admin-table">
+              <thead>
+                <tr>
+                  <th>Nome da Tabela</th>
+                  <th>Registros</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for table in tables_info %}
+                <tr>
+                  <td>{{ table.name }}</td>
+                  <td>{{ table.count }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="row mt-4">
+    <!-- Manutenção do banco de dados -->
+    <div class="col-md-12">
+      <div class="card admin-card">
+        <div class="card-header bg-light">
+          <i class="fas fa-tools mr-2"></i>Manutenção do Banco de Dados
+        </div>
+        <div class="card-body">
+          <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            <strong>Atenção:</strong> As operações abaixo podem afetar a integridade do banco de dados. Certifique-se de criar um backup antes de prosseguir.
+          </div>
+          
+          <div class="row">
+            <div class="col-md-4">
+              <div class="card mb-3">
+                <div class="card-body text-center">
+                  <h5 class="card-title"><i class="fas fa-broom mr-2"></i>Limpar Logs</h5>
+                  <p class="card-text">Remove registros de log antigos para liberar espaço.</p>
+                  <button class="btn btn-outline-warning" disabled>
+                    <i class="fas fa-broom mr-1"></i> Limpar Logs
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-4">
+              <div class="card mb-3">
+                <div class="card-body text-center">
+                  <h5 class="card-title"><i class="fas fa-compress-arrows-alt mr-2"></i>Otimizar Banco</h5>
+                  <p class="card-text">Otimiza o banco de dados para melhor desempenho.</p>
+                  <button class="btn btn-outline-info" disabled>
+                    <i class="fas fa-compress-arrows-alt mr-1"></i> Otimizar
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-4">
+              <div class="card mb-3">
+                <div class="card-body text-center">
+                  <h5 class="card-title"><i class="fas fa-check-circle mr-2"></i>Verificar Integridade</h5>
+                  <p class="card-text">Verifica a integridade do banco de dados.</p>
+                  <button class="btn btn-outline-success" disabled>
+                    <i class="fas fa-check-circle mr-1"></i> Verificar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="alert alert-info mt-3">
+            <i class="fas fa-info-circle mr-2"></i>
+            <strong>Nota:</strong> Algumas funcionalidades de manutenção estão desabilitadas nesta versão.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

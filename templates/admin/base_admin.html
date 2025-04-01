@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel Administrativo - Sistema Financeiro</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  <style>
+    .admin-sidebar {
+      background-color: #343a40;
+      color: white;
+      min-height: calc(100vh - 56px);
+      padding-top: 20px;
+    }
+    .admin-sidebar .nav-link {
+      color: rgba(255, 255, 255, 0.75);
+      padding: 10px 20px;
+      border-radius: 5px;
+      margin-bottom: 5px;
+    }
+    .admin-sidebar .nav-link:hover,
+    .admin-sidebar .nav-link.active {
+      color: white;
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+    .admin-sidebar .nav-link i {
+      margin-right: 10px;
+      width: 20px;
+      text-align: center;
+    }
+    .admin-content {
+      padding: 20px;
+    }
+    .admin-card {
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+      transition: transform 0.2s;
+    }
+    .admin-card:hover {
+      transform: translateY(-5px);
+    }
+    .admin-card .card-header {
+      border-radius: 10px 10px 0 0;
+      font-weight: 600;
+    }
+    .admin-card .card-body {
+      padding: 20px;
+    }
+    .admin-stat {
+      text-align: center;
+      padding: 15px;
+    }
+    .admin-stat .stat-value {
+      font-size: 2rem;
+      font-weight: 600;
+      margin: 10px 0;
+    }
+    .admin-stat .stat-label {
+      font-size: 0.9rem;
+      color: #6c757d;
+    }
+    .admin-stat i {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+    .admin-table th {
+      background-color: #f8f9fa;
+    }
+    .admin-badge {
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="{{ url_for('admin.admin_dashboard') }}">
+        <i class="fas fa-shield-alt mr-2"></i>Painel Administrativo
+      </a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#adminNavbar">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="adminNavbar">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('index') }}">
+              <i class="fas fa-home mr-1"></i> Voltar ao Site
+            </a>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown">
+              <i class="fas fa-user-circle mr-1"></i> {{ current_user.name }}
+            </a>
+            <div class="dropdown-menu dropdown-menu-right">
+              <a class="dropdown-item" href="{{ url_for('profile') }}">
+                <i class="fas fa-id-card mr-2"></i>Perfil
+              </a>
+              <div class="dropdown-divider"></div>
+              <a class="dropdown-item" href="{{ url_for('logout') }}">
+                <i class="fas fa-sign-out-alt mr-2"></i>Sair
+              </a>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Sidebar de navegação administrativa -->
+      <div class="col-md-3 col-lg-2 admin-sidebar">
+        <ul class="nav flex-column">
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'admin.admin_dashboard' %}active{% endif %}" 
+               href="{{ url_for('admin.admin_dashboard') }}">
+              <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'admin.manage_users' %}active{% endif %}" 
+               href="{{ url_for('admin.manage_users') }}">
+              <i class="fas fa-users"></i> Usuários
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'admin.manage_database' %}active{% endif %}" 
+               href="{{ url_for('admin.manage_database') }}">
+              <i class="fas fa-database"></i> Banco de Dados
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'admin.view_logs' %}active{% endif %}" 
+               href="{{ url_for('admin.view_logs') }}">
+              <i class="fas fa-clipboard-list"></i> Logs
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'admin.system_stats' %}active{% endif %}" 
+               href="{{ url_for('admin.system_stats') }}">
+              <i class="fas fa-chart-bar"></i> Estatísticas
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Conteúdo principal -->
+      <main class="col-md-9 col-lg-10 admin-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

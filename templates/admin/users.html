@@ -1,0 +1,126 @@
+{% extends "admin/base_admin.html" %}
+
+{% block content %}
+<div class="container-fluid">
+  <h1 class="mb-4"><i class="fas fa-users mr-2"></i>Gerenciamento de Usuários</h1>
+  
+  <div class="card admin-card">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+      <span><i class="fas fa-list mr-2"></i>Lista de Usuários</span>
+      <div class="input-group" style="max-width: 300px;">
+        <input type="text" id="userSearch" class="form-control" placeholder="Buscar usuário...">
+        <div class="input-group-append">
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover admin-table" id="usersTable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nome</th>
+              <th>Email</th>
+              <th>Data de Registro</th>
+              <th>Último Login</th>
+              <th>Status</th>
+              <th>Admin</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in users %}
+            <tr>
+              <td>{{ user.id }}</td>
+              <td>{{ user.name }}</td>
+              <td>{{ user.email }}</td>
+              <td>{{ user.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+              <td>{{ user.last_login.strftime('%d/%m/%Y %H:%M') if user.last_login else 'Nunca' }}</td>
+              <td>
+                {% if user.active %}
+                <span class="badge badge-success admin-badge">Ativo</span>
+                {% else %}
+                <span class="badge badge-danger admin-badge">Inativo</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if user.is_admin %}
+                <span class="badge badge-primary admin-badge">Sim</span>
+                {% else %}
+                <span class="badge badge-secondary admin-badge">Não</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="btn-group">
+                  <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  {% if user.id != current_user.id %}
+                  <button type="button" class="btn btn-sm btn-outline-danger" data-toggle="modal" data-target="#deleteModal{{ user.id }}">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                  {% endif %}
+                </div>
+                
+                <!-- Modal de confirmação de exclusão -->
+                <div class="modal fade" id="deleteModal{{ user.id }}" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel{{ user.id }}" aria-hidden="true">
+                  <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="deleteModalLabel{{ user.id }}">Confirmar Exclusão</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                          <span aria-hidden="true">&times;</span>
+                        </button>
+                      </div>
+                      <div class="modal-body">
+                        <p>Tem certeza que deseja excluir o usuário <strong>{{ user.name }}</strong>?</p>
+                        <p class="text-danger"><i class="fas fa-exclamation-triangle mr-2"></i>Esta ação não pode ser desfeita e excluirá todas as transações e cartões de crédito associados a este usuário.</p>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                        <form action="{{ url_for('admin.delete_user', user_id=user.id) }}" method="POST">
+                          <button type="submit" class="btn btn-danger">Excluir</button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Função para filtrar a tabela de usuários
+  document.getElementById('userSearch').addEventListener('keyup', function() {
+    const searchText = this.value.toLowerCase();
+    const table = document.getElementById('usersTable');
+    const rows = table.getElementsByTagName('tr');
+    
+    for (let i = 1; i < rows.length; i++) { // Começar do índice 1 para pular o cabeçalho
+      const row = rows[i];
+      const cells = row.getElementsByTagName('td');
+      let found = false;
+      
+      for (let j = 0; j < cells.length - 1; j++) { // Ignorar a última coluna (ações)
+        const cellText = cells[j].textContent.toLowerCase();
+        if (cellText.indexOf(searchText) > -1) {
+          found = true;
+          break;
+        }
+      }
+      
+      row.style.display = found ? '' : 'none';
+    }
+  });
+</script>
+{% endblock %}

@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 import os
 import csv
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
@@ -13,8 +13,18 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from functools import wraps
 import json
+import logging
+import sqlite3
 
 app = Flask(__name__)
+
+# Configuração de logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    filename='app.log',
+    filemode='a'
+)
 app.config['SECRET_KEY'] = 'sua_chave_secreta_aqui'
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'finance.db')
@@ -63,6 +73,7 @@ class User(db.Model, UserMixin):
     created_at = db.Column(db.DateTime, default=datetime.now)
     last_login = db.Column(db.DateTime, nullable=True)
     active = db.Column(db.Boolean, default=True)
+    is_admin = db.Column(db.Boolean, default=False)  # Campo para indicar se o usuário é administrador
     
     # Relacionamentos
     transactions = db.relationship('Transaction', backref='user', lazy=True)
@@ -1720,6 +1731,31 @@ def pending_invoices():
 def home():
     return render_template('landing.html')
 
+# Rota para verificar se um usuário é administrador
+@app.route('/check_admin')
+@login_required
+def check_admin():
+    if current_user.is_admin:
+        return redirect(url_for('admin.admin_dashboard'))
+    else:
+        flash('Você não tem permissões de administrador.', 'danger')
+        return redirect(url_for('index'))
+
+# Função para promover um usuário a administrador (apenas para desenvolvimento)
+@app.route('/make_admin/<int:user_id>', methods=['POST'])
+@login_required
+def make_admin(user_id):
+    # Verificar se o usuário atual já é admin
+    if not current_user.is_admin:
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('index'))
+    
+    user = User.query.get_or_404(user_id)
+    user.is_admin = True
+    db.session.commit()
+    flash(f'Usuário {user.name} promovido a administrador!', 'success')
+    return redirect(url_for('admin.manage_users'))
+
 # Rota para a página de política de privacidade
 @app.route('/privacy')
 def privacy_policy():
@@ -1734,6 +1770,11 @@ def terms_of_use():
 @app.route('/about')
 def about_us():
     return render_template('about_us.html')
+
+# Inicializar o módulo admin com as dependências necessárias
+from admin import admin_bp, init_admin
+init_admin(db, User, Transaction, CreditCard)
+app.register_blueprint(admin_bp)
 
 if __name__ == '__main__':
     with app.app_context():

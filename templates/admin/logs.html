@@ -1,0 +1,91 @@
+{% extends "admin/base_admin.html" %}
+
+{% block content %}
+<div class="container-fluid">
+  <h1 class="mb-4"><i class="fas fa-clipboard-list mr-2"></i>Logs do Sistema</h1>
+  
+  <div class="card admin-card">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+      <span><i class="fas fa-history mr-2"></i>Histórico de Atividades</span>
+      <div class="input-group" style="max-width: 300px;">
+        <input type="text" id="logSearch" class="form-control" placeholder="Buscar nos logs...">
+        <div class="input-group-append">
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      {% if logs %}
+      <div class="table-responsive">
+        <table class="table table-sm table-hover" id="logsTable">
+          <thead>
+            <tr>
+              <th>Data/Hora</th>
+              <th>Nível</th>
+              <th>Mensagem</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in logs %}
+            <tr>
+              {% set log_parts = log.split(' - ') %}
+              {% if log_parts|length >= 3 %}
+                <td>{{ log_parts[0] }}</td>
+                <td>
+                  {% if 'INFO' in log_parts[2] %}
+                    <span class="badge badge-info">INFO</span>
+                  {% elif 'WARNING' in log_parts[2] %}
+                    <span class="badge badge-warning">WARNING</span>
+                  {% elif 'ERROR' in log_parts[2] %}
+                    <span class="badge badge-danger">ERROR</span>
+                  {% elif 'DEBUG' in log_parts[2] %}
+                    <span class="badge badge-secondary">DEBUG</span>
+                  {% else %}
+                    <span class="badge badge-primary">{{ log_parts[2] }}</span>
+                  {% endif %}
+                </td>
+                <td>{{ log_parts[3:] | join(' - ') }}</td>
+              {% else %}
+                <td colspan="3">{{ log }}</td>
+              {% endif %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="alert alert-info">
+        <i class="fas fa-info-circle mr-2"></i>Nenhum log encontrado.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Função para filtrar a tabela de logs
+  document.getElementById('logSearch').addEventListener('keyup', function() {
+    const searchText = this.value.toLowerCase();
+    const table = document.getElementById('logsTable');
+    const rows = table.getElementsByTagName('tr');
+    
+    for (let i = 1; i < rows.length; i++) { // Começar do índice 1 para pular o cabeçalho
+      const row = rows[i];
+      const cells = row.getElementsByTagName('td');
+      let found = false;
+      
+      for (let j = 0; j < cells.length; j++) {
+        const cellText = cells[j].textContent.toLowerCase();
+        if (cellText.indexOf(searchText) > -1) {
+          found = true;
+          break;
+        }
+      }
+      
+      row.style.display = found ? '' : 'none';
+    }
+  });
+</script>
+{% endblock %}

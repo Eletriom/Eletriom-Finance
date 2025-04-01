@@ -53,6 +53,9 @@
             </a>
             <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
               <a class="dropdown-item" href="{{ url_for('profile') }}"><i class="fas fa-id-card mr-2"></i>Perfil</a>
+              {% if current_user.is_authenticated and current_user.is_admin %}
+              <a class="dropdown-item" href="{{ url_for('admin.admin_dashboard') }}"><i class="fas fa-shield-alt mr-2"></i>Painel Admin</a>
+              {% endif %}
               <div class="dropdown-divider"></div>
               <a class="dropdown-item" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt mr-2"></i>Sair</a>
             </div>

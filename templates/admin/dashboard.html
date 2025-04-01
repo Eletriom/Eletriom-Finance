@@ -1,0 +1,201 @@
+{% extends "admin/base_admin.html" %}
+
+{% block content %}
+<div class="container-fluid">
+  <h1 class="mb-4"><i class="fas fa-tachometer-alt mr-2"></i>Dashboard Administrativo</h1>
+  
+  <div class="row">
+    <!-- Estatísticas rápidas -->
+    <div class="col-md-3">
+      <div class="card admin-card bg-primary text-white">
+        <div class="card-body admin-stat">
+          <i class="fas fa-users"></i>
+          <div class="stat-value">{{ total_users }}</div>
+          <div class="stat-label">Usuários Totais</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-3">
+      <div class="card admin-card bg-success text-white">
+        <div class="card-body admin-stat">
+          <i class="fas fa-user-check"></i>
+          <div class="stat-value">{{ active_users }}</div>
+          <div class="stat-label">Usuários Ativos</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-3">
+      <div class="card admin-card bg-info text-white">
+        <div class="card-body admin-stat">
+          <i class="fas fa-exchange-alt"></i>
+          <div class="stat-value">{{ total_transactions }}</div>
+          <div class="stat-label">Transações</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-3">
+      <div class="card admin-card bg-warning text-white">
+        <div class="card-body admin-stat">
+          <i class="fas fa-credit-card"></i>
+          <div class="stat-value">{{ total_credit_cards }}</div>
+          <div class="stat-label">Cartões de Crédito</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="row mt-4">
+    <!-- Usuários recentes -->
+    <div class="col-md-6">
+      <div class="card admin-card">
+        <div class="card-header bg-light">
+          <i class="fas fa-user-plus mr-2"></i>Usuários Recentes
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover admin-table">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Email</th>
+                  <th>Data de Registro</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for user in recent_users %}
+                <tr>
+                  <td>{{ user.name }}</td>
+                  <td>{{ user.email }}</td>
+                  <td>{{ user.created_at.strftime('%d/%m/%Y') }}</td>
+                  <td>
+                    {% if user.active %}
+                    <span class="badge badge-success admin-badge">Ativo</span>
+                    {% else %}
+                    <span class="badge badge-danger admin-badge">Inativo</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <a href="{{ url_for('admin.manage_users') }}" class="btn btn-sm btn-outline-primary mt-2">
+            <i class="fas fa-users mr-1"></i> Ver Todos os Usuários
+          </a>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Transações recentes -->
+    <div class="col-md-6">
+      <div class="card admin-card">
+        <div class="card-header bg-light">
+          <i class="fas fa-exchange-alt mr-2"></i>Transações Recentes
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover admin-table">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Descrição</th>
+                  <th>Valor</th>
+                  <th>Tipo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for txn in recent_transactions %}
+                <tr>
+                  <td>{{ txn.date.strftime('%d/%m/%Y') }}</td>
+                  <td>{{ txn.description }}</td>
+                  <td>R$ {{ txn.value | safe_round(2) }}</td>
+                  <td>
+                    {% if txn.trans_type == 'entrada' %}
+                    <span class="badge badge-success admin-badge">Entrada</span>
+                    {% else %}
+                    <span class="badge badge-danger admin-badge">Saída</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="row mt-4">
+    <!-- Informações do sistema -->
+    <div class="col-md-6">
+      <div class="card admin-card">
+        <div class="card-header bg-light">
+          <i class="fas fa-server mr-2"></i>Informações do Sistema
+        </div>
+        <div class="card-body">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Tamanho do Banco de Dados
+              <span class="badge badge-primary badge-pill">{{ db_size_mb | safe_round(2) }} MB</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Usuários Ativos
+              <span class="badge badge-success badge-pill">{{ active_users }}</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              Usuários Inativos
+              <span class="badge badge-danger badge-pill">{{ inactive_users }}</span>
+            </li>
+          </ul>
+          <div class="mt-3">
+            <a href="{{ url_for('admin.manage_database') }}" class="btn btn-sm btn-outline-primary">
+              <i class="fas fa-database mr-1"></i> Gerenciar Banco de Dados
+            </a>
+            <a href="{{ url_for('admin.view_logs') }}" class="btn btn-sm btn-outline-secondary ml-2">
+              <i class="fas fa-clipboard-list mr-1"></i> Ver Logs
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Links rápidos -->
+    <div class="col-md-6">
+      <div class="card admin-card">
+        <div class="card-header bg-light">
+          <i class="fas fa-link mr-2"></i>Ações Rápidas
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-6 mb-3">
+              <a href="{{ url_for('admin.manage_users') }}" class="btn btn-outline-primary btn-block">
+                <i class="fas fa-users mr-2"></i>Gerenciar Usuários
+              </a>
+            </div>
+            <div class="col-6 mb-3">
+              <a href="{{ url_for('admin.manage_database') }}" class="btn btn-outline-info btn-block">
+                <i class="fas fa-database mr-2"></i>Banco de Dados
+              </a>
+            </div>
+            <div class="col-6 mb-3">
+              <a href="{{ url_for('admin.view_logs') }}" class="btn btn-outline-secondary btn-block">
+                <i class="fas fa-clipboard-list mr-2"></i>Ver Logs
+              </a>
+            </div>
+            <div class="col-6 mb-3">
+              <a href="{{ url_for('admin.system_stats') }}" class="btn btn-outline-success btn-block">
+                <i class="fas fa-chart-bar mr-2"></i>Estatísticas
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
