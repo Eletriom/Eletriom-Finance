@@ -668,6 +668,11 @@ def upload_csv():
 @login_required
 def edit_transaction(transaction_id):
     transaction = Transaction.query.get_or_404(transaction_id)
+    
+    # Verificar se a transação pertence ao usuário atual
+    if transaction.user_id != current_user.id:
+        flash('Acesso negado. Esta transação não pertence ao usuário atual.', 'danger')
+        return redirect(url_for('index'))
     if request.method == 'POST':
         date_str = request.form.get('date')
         value_str = request.form.get('value')
@@ -740,6 +745,11 @@ def edit_transaction(transaction_id):
 @login_required
 def delete_transaction(transaction_id):
     transaction = Transaction.query.get_or_404(transaction_id)
+    
+    # Verificar se a transação pertence ao usuário atual
+    if transaction.user_id != current_user.id:
+        flash('Acesso negado. Esta transação não pertence ao usuário atual.', 'danger')
+        return redirect(url_for('index'))
     db.session.delete(transaction)
     db.session.commit()
     return jsonify({'success': True, 'message': 'Transação excluída com sucesso!'})
@@ -856,9 +866,9 @@ def export_csv():
 @app.route('/recurring')
 @login_required
 def recurring_transactions():
-    # Buscar todas as transações recorrentes principais (parent_id é NULL)
+    # Buscar todas as transações recorrentes principais (parent_id é NULL) do usuário atual
     recurring_groups = []
-    parent_transactions = Transaction.query.filter_by(is_recurring=True, parent_id=None).all()
+    parent_transactions = Transaction.query.filter_by(is_recurring=True, parent_id=None, user_id=current_user.id).all()
     
     for parent in parent_transactions:
         # Buscar todas as transações desta série (incluindo a principal)
@@ -903,6 +913,10 @@ def recurring_transactions():
 def get_recurring_series(series_id):
     # Buscar a transação principal
     parent = Transaction.query.get_or_404(series_id)
+    
+    # Verificar se a transação pertence ao usuário atual
+    if parent.user_id != current_user.id:
+        return jsonify({'success': False, 'message': 'Acesso negado. Esta transação não pertence ao usuário atual.'}), 403
     
     if not parent.is_recurring:
         return jsonify({'success': False, 'message': 'Esta não é uma transação recorrente.'})
@@ -949,6 +963,10 @@ def cancel_recurring_series(series_id):
     
     # Buscar a transação principal
     parent = Transaction.query.get_or_404(series_id)
+    
+    # Verificar se a transação pertence ao usuário atual
+    if parent.user_id != current_user.id:
+        return jsonify({'success': False, 'message': 'Acesso negado. Esta transação não pertence ao usuário atual.'}), 403
     
     if not parent.is_recurring:
         return jsonify({'success': False, 'message': 'Esta não é uma transação recorrente.'})
@@ -1004,9 +1022,14 @@ def cancel_recurring_series(series_id):
 
 # Rota para cancelar uma única ocorrência
 @app.route('/recurring/cancel-occurrence/<int:occurrence_id>', methods=['POST'])
+@login_required
 def cancel_occurrence(occurrence_id):
     # Buscar a ocorrência
     occurrence = Transaction.query.get_or_404(occurrence_id)
+    
+    # Verificar se a transação pertence ao usuário atual
+    if occurrence.user_id != current_user.id:
+        return jsonify({'success': False, 'message': 'Acesso negado. Esta transação não pertence ao usuário atual.'}), 403
     
     # Verificar se é uma ocorrência futura
     if occurrence.date <= datetime.now().date():
@@ -1024,7 +1047,8 @@ def cancel_occurrence(occurrence_id):
 # Rota para listar cartões de crédito
 @app.route('/credit_cards')
 def credit_cards():
-    cards = CreditCard.query.all()
+    # Filtrar apenas os cartões do usuário atual
+    cards = CreditCard.query.filter_by(user_id=current_user.id).all()
     cards_with_available = []
     
     for card in cards:
@@ -1108,6 +1132,10 @@ def add_credit_card():
 @app.route('/credit_cards/<int:card_id>')
 def get_credit_card(card_id):
     card = CreditCard.query.get_or_404(card_id)
+    
+    # Verificar se o cartão pertence ao usuário atual
+    if card.user_id != current_user.id:
+        return jsonify({'success': False, 'message': 'Acesso negado. Este cartão não pertence ao usuário atual.'}), 403
     
     # Calcular o limite disponível
     card_transactions = Transaction.query.filter_by(credit_card_id=card.id, trans_type='saida').all()
@@ -1196,6 +1224,10 @@ def get_credit_card(card_id):
 def update_credit_card(card_id):
     card = CreditCard.query.get_or_404(card_id)
     
+    # Verificar se o cartão pertence ao usuário atual
+    if card.user_id != current_user.id:
+        return jsonify({'success': False, 'message': 'Acesso negado. Este cartão não pertence ao usuário atual.'}), 403
+    
     name = request.form.get('name')
     limit_str = request.form.get('limit')
     due_day_str = request.form.get('due_day')
@@ -1228,11 +1260,28 @@ def update_credit_card(card_id):
 @app.route('/credit_cards/delete/<int:card_id>', methods=['POST'])
 def delete_credit_card(card_id):
     card = CreditCard.query.get_or_404(card_id)
+    
+    # Verificar se o cartão pertence ao usuário atual
+    if card.user_id != current_user.id:
+        flash('Acesso negado. Este cartão não pertence ao usuário atual.', 'danger')
+        return redirect(url_for('credit_cards'))
+    
+    # Excluir o cartão
+    db.session.delete(card)
+    db.session.commit()
+    
+    flash('Cartão excluído com sucesso!', 'success')
+    return redirect(url_for('credit_cards'))
 
 # Rota para obter transações de um cartão por mês
 @app.route('/credit_cards/<int:card_id>/transactions')
 def get_card_transactions(card_id):
     card = CreditCard.query.get_or_404(card_id)
+    
+    # Verificar se o cartão pertence ao usuário atual
+    if card.user_id != current_user.id:
+        return jsonify({'success': False, 'message': 'Acesso negado. Este cartão não pertence ao usuário atual.'}), 403
+    
     month = request.args.get('month', 'current')
     
     # Obter data atual
