@@ -112,6 +112,7 @@ class Transaction(db.Model):
     parent_id = db.Column(db.Integer, db.ForeignKey('transaction.id'), nullable=True)
     credit_card_id = db.Column(db.Integer, db.ForeignKey('credit_card.id'), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    completed = db.Column(db.Boolean, default=False)  # Campo para marcar se a transação foi realizada
 
     def __repr__(self):
         return f"<Transaction {self.date} {self.value} {self.trans_type}>"
@@ -455,7 +456,8 @@ def index():
             'category': txn.category,
             'balance': running_balance,
             'is_recurring': txn.is_recurring,
-            'parent_id': txn.parent_id
+            'parent_id': txn.parent_id,
+            'completed': txn.completed
         })
     
     # Garantir que o JSON seja formatado corretamente sem espaços ou quebras de linha extras
@@ -691,6 +693,7 @@ def edit_transaction(transaction_id):
         trans_type = request.form.get('trans_type')
         category = request.form.get('category')
         credit_card_id = request.form.get('credit_card_id')
+        edit_all = request.form.get('edit_all') == 'true'
         
         if not date_str or not value_str or not description or not trans_type:
             return jsonify({'success': False, 'message': 'Todos os campos obrigatórios devem ser preenchidos.'})
@@ -721,8 +724,8 @@ def edit_transaction(transaction_id):
         transaction.category = category
         transaction.credit_card_id = card_id
         
-        # Se for uma transação recorrente principal, atualizar também as transações filhas futuras
-        if transaction.is_recurring and transaction.parent_id is None:
+        # Se for uma transação recorrente principal E o usuário escolheu editar todas, atualizar também as transações filhas futuras
+        if edit_all and transaction.is_recurring and transaction.parent_id is None:
             # Buscar todas as transações filhas futuras
             future_transactions = Transaction.query.filter(
                 Transaction.parent_id == transaction.id,
@@ -736,6 +739,31 @@ def edit_transaction(transaction_id):
                 child_txn.trans_type = trans_type.lower()
                 child_txn.category = category
                 child_txn.credit_card_id = card_id
+        # Se for uma transação filha e o usuário escolheu editar todas, atualizar a principal e outras filhas futuras
+        elif edit_all and transaction.is_recurring and transaction.parent_id is not None:
+            # Buscar a transação principal
+            parent = Transaction.query.get(transaction.parent_id)
+            if parent:
+                parent.value = value
+                parent.description = description
+                parent.trans_type = trans_type.lower()
+                parent.category = category
+                parent.credit_card_id = card_id
+                
+                # Buscar todas as outras transações filhas futuras
+                future_transactions = Transaction.query.filter(
+                    Transaction.parent_id == parent.id,
+                    Transaction.date > datetime.now().date(),
+                    Transaction.id != transaction.id
+                ).all()
+                
+                # Atualizar cada transação filha
+                for child_txn in future_transactions:
+                    child_txn.value = value
+                    child_txn.description = description
+                    child_txn.trans_type = trans_type.lower()
+                    child_txn.category = category
+                    child_txn.credit_card_id = card_id
         
         db.session.commit()
         return jsonify({'success': True, 'message': 'Transação atualizada com sucesso!'})
@@ -748,7 +776,10 @@ def edit_transaction(transaction_id):
         'description': transaction.description,
         'trans_type': transaction.trans_type,
         'category': transaction.category or '',
-        'credit_card_id': transaction.credit_card_id or ''
+        'credit_card_id': transaction.credit_card_id or '',
+        'is_recurring': transaction.is_recurring,
+        'parent_id': transaction.parent_id,
+        'completed': transaction.completed
     })
 
 # Rota para excluir uma transação
@@ -1770,6 +1801,27 @@ def terms_of_use():
 @app.route('/about')
 def about_us():
     return render_template('about_us.html')
+
+# Rota para alternar o status 'completed' de uma transação
+@app.route('/toggle_completed/<int:transaction_id>', methods=['POST'])
+@login_required
+def toggle_completed(transaction_id):
+    """Alterna o status 'completed' de uma transação."""
+    transaction = Transaction.query.get_or_404(transaction_id)
+    
+    # Verificar se a transação pertence ao usuário atual
+    if transaction.user_id != current_user.id:
+        return jsonify({'success': False, 'error': 'Acesso negado'}), 403
+    
+    # Alternar o status 'completed'
+    transaction.completed = not transaction.completed
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'transaction_id': transaction.id,
+        'completed': transaction.completed
+    })
 
 # Inicializar o módulo admin com as dependências necessárias
 from admin import admin_bp, init_admin

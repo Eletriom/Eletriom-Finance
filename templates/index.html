@@ -57,7 +57,13 @@
 <div class="card mb-4">
   <div class="card-header d-flex justify-content-between align-items-center">
     <h5 class="mb-0"><i class="fas fa-list mr-2"></i>Histórico de Transações</h5>
-    <button id="btn-future-balance" class="btn btn-sm btn-info"><i class="fas fa-calendar-alt mr-1"></i>Projeção Futura</button>
+    <div class="d-flex align-items-center">
+      <div class="custom-control custom-switch mr-3">
+        <input type="checkbox" class="custom-control-input" id="toggle-completed-transactions">
+        <label class="custom-control-label" for="toggle-completed-transactions">Mostrar realizadas</label>
+      </div>
+      <button id="btn-future-balance" class="btn btn-sm btn-info"><i class="fas fa-calendar-alt mr-1"></i>Projeção Futura</button>
+    </div>
   </div>
   <div class="table-responsive">
     <table class="table table-hover mb-0 table-xs-simplified">
@@ -69,12 +75,13 @@
           <th>Descrição</th>
           <th>Categoria</th>
           <th>Saldo</th>
+          <th>Realizado</th>
           <th>Ações</th>
         </tr>
       </thead>
       <tbody>
         {% for txn in transactions %}
-        <tr data-id="{{ loop.index0 }}" data-transaction-id="{{ txn.id }}">
+        <tr data-id="{{ loop.index0 }}" data-transaction-id="{{ txn.id }}" class="transaction-row {% if txn.completed %}completed-transaction{% endif %}">
           <td data-label="Data">{{ txn.date }}</td>
           <td data-label="Tipo">
             {% if txn.trans_type == 'entrada' %}
@@ -93,6 +100,12 @@
             {% endif %}
           </td>
           <td data-label="Saldo" class="font-weight-bold">R$ {{ txn.balance | safe_round(2) }}</td>
+          <td data-label="Realizado">
+            <div class="custom-control custom-checkbox">
+              <input type="checkbox" class="custom-control-input toggle-completed" id="completed-{{ txn.id }}" data-id="{{ txn.id }}" {% if txn.completed %}checked{% endif %}>
+              <label class="custom-control-label" for="completed-{{ txn.id }}"></label>
+            </div>
+          </td>
           <td data-label="Ações">
             <button class="btn btn-sm btn-primary btn-edit" data-id="{{ loop.index0 }}"><i class="fas fa-edit"></i></button>
             <button class="btn btn-sm btn-danger btn-delete" data-id="{{ loop.index0 }}"><i class="fas fa-trash"></i></button>
@@ -198,6 +211,12 @@
             <label for="edit-description"><i class="fas fa-align-left mr-1"></i>Descrição</label>
             <input type="text" class="form-control" name="description" id="edit-description" placeholder="Ex: INTER" required>
           </div>
+          <div class="form-group" id="edit-recurring-option" style="display: none;">
+            <div class="custom-control custom-checkbox">
+              <input type="checkbox" class="custom-control-input" id="edit-all" name="edit_all" value="true">
+              <label class="custom-control-label" for="edit-all"><i class="fas fa-sync-alt mr-1"></i>Editar todas as ocorrências futuras</label>
+            </div>
+          </div>
         </form>
       </div>
       <div class="modal-footer">
@@ -235,6 +254,60 @@
 <script id="transactions-data" type="application/json">{% if transactions_json is defined %}{{ transactions_json|safe }}{% else %}[]{% endif %}</script>
 
 <script>
+  // Estado inicial - ocultar transações realizadas
+  let showCompletedTransactions = false;
+  
+  // Função para atualizar a visibilidade das transações realizadas
+  function updateCompletedTransactionsVisibility() {
+    const completedRows = document.querySelectorAll('.completed-transaction');
+    completedRows.forEach(row => {
+      row.style.display = showCompletedTransactions ? 'table-row' : 'none';
+    });
+  }
+  
+  // Inicializar a visibilidade das transações realizadas
+  document.addEventListener('DOMContentLoaded', function() {
+    updateCompletedTransactionsVisibility();
+  });
+  
+  // Toggle para mostrar/ocultar transações realizadas
+  document.getElementById('toggle-completed-transactions').addEventListener('change', function() {
+    showCompletedTransactions = this.checked;
+    updateCompletedTransactionsVisibility();
+  });
+  
+  // Manipular checkbox de transação realizada
+  document.querySelectorAll('.toggle-completed').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+      const transactionId = this.getAttribute('data-id');
+      const row = document.querySelector(`tr[data-transaction-id="${transactionId}"]`);
+      
+      // Enviar atualização para o servidor
+      fetch(`/toggle_completed/${transactionId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Atualizar a classe da linha
+          if (data.completed) {
+            row.classList.add('completed-transaction');
+          } else {
+            row.classList.remove('completed-transaction');
+          }
+          
+          // Atualizar a visibilidade com base no estado atual
+          if (!showCompletedTransactions && data.completed) {
+            row.style.display = 'none';
+          }
+        }
+      });
+    });
+  });
+  
   document.querySelectorAll('.btn-edit').forEach(button => {
     button.addEventListener('click', function() {
       const transactionId = document.querySelector(`tr[data-id="${this.getAttribute('data-id')}"]`).getAttribute('data-transaction-id');
@@ -254,6 +327,10 @@
           // Mostrar/ocultar opção de cartão de crédito com base no tipo
           const creditCardOption = document.getElementById('edit-credit-card-option');
           creditCardOption.style.display = data.trans_type === 'saida' ? 'block' : 'none';
+          
+          // Mostrar/ocultar opção de edição recorrente com base se a transação é recorrente
+          const recurringOption = document.getElementById('edit-recurring-option');
+          recurringOption.style.display = data.is_recurring ? 'block' : 'none';
           
           // Selecionar o cartão correto no dropdown
           if (data.credit_card_id) {

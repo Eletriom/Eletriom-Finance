@@ -99,6 +99,26 @@ body {
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
 }
 
+/* Estilo para transações realizadas */
+.completed-transaction {
+  background-color: rgba(46, 204, 113, 0.1);
+}
+
+.completed-transaction td {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.completed-transaction td.font-weight-bold {
+  text-decoration: none;
+}
+
+.completed-transaction td:last-child,
+.completed-transaction td:nth-last-child(2) {
+  text-decoration: none;
+  opacity: 1;
+}
+
 /* Tabela responsiva */
 .table {
   background: white;
