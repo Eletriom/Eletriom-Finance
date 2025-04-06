@@ -6,6 +6,7 @@ finance.db
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
+
 *.py[cod]
 *$py.class
 
@@ -20,7 +21,7 @@ ENV/
 *.swo
 
 # Logs and local settings
-*.log
+app.log
 *.sql
 *.sqlite-journal
 
